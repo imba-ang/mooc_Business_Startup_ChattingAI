@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="面向创新创业课程的破—扩—筛三阶创新思维陪练平台"
+    />
+    <meta name="theme-color" content="#1467e8" />
+    <title>启思 · AI 创新陪练</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">跳到陪练区</a>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="陪练阶段导航">
+        <a class="brand" href="#" aria-label="启思 AI 创新陪练首页">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" role="img">
+              <path d="M12.8 7.8h9.7a9.7 9.7 0 0 1 0 19.4h-3.2l-6.5 5.2v-5.2a9.7 9.7 0 0 1 0-19.4Z" />
+              <path class="brand-spark" d="m26.8 8.8 1.1 2.6 2.6 1.1-2.6 1.1-1.1 2.6-1.1-2.6-2.6-1.1 2.6-1.1 1.1-2.6Z" />
+            </svg>
+          </span>
+          <span>
+            <strong>启思</strong>
+            <small>AI 创新陪练</small>
+          </span>
+        </a>
+
+        <div class="course-label">本次训练</div>
+        <nav class="stage-nav" id="stageNav"></nav>
+
+        <div class="principle-card">
+          <span class="principle-icon" aria-hidden="true">✦</span>
+          <div>
+            <strong>陪练原则</strong>
+            <p>人先思，机再问，人再创。</p>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="sidebar-action" id="presentationButton" type="button">
+            <span aria-hidden="true">⌗</span>
+            <span>教学展示模式</span>
+          </button>
+          <button class="sidebar-action danger" id="resetButton" type="button">
+            <span aria-hidden="true">↻</span>
+            <span>重新开始</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-panel" id="workspace">
+        <header class="topbar">
+          <button class="mobile-menu" id="mobileMenuButton" type="button" aria-label="打开阶段导航">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="progress-heading">
+            <span class="eyebrow" id="phaseEyebrow">陪练启动</span>
+            <div class="progress-title-row">
+              <h1 id="phaseTitle">明确你的真实问题</h1>
+              <span class="step-badge" id="stepBadge">准备开始</span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <span class="saved-status" id="savedStatus" role="status">
+              <span class="saved-dot"></span>进度已保存
+            </span>
+            <button class="icon-button" id="resultToggleButton" type="button" aria-label="查看成果单">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v14A1.5 1.5 0 0 1 17 20.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>
+            </button>
+          </div>
+          <div class="overall-progress" aria-hidden="true">
+            <span id="overallProgressBar"></span>
+          </div>
+        </header>
+
+        <section class="chat-scroll" id="chatScroll" aria-label="创新陪练对话">
+          <div class="chat-column">
+            <div class="stage-intro" id="stageIntro"></div>
+            <div class="message-list" id="messageList" aria-live="polite"></div>
+            <div class="interaction-card" id="interactionCard"></div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="result-panel" id="resultPanel" aria-label="实时成果单">
+        <div class="result-header">
+          <div>
+            <span class="eyebrow">随答随记</span>
+            <h2>迁移任务成果单</h2>
+          </div>
+          <button class="result-close" id="resultCloseButton" type="button" aria-label="关闭成果单">×</button>
+        </div>
+        <p class="result-description">你的回答会在这里自动整理，完成后可直接导出。</p>
+        <div class="result-content" id="resultContent"></div>
+        <div class="result-footer">
+          <button class="secondary-button" id="copyButton" type="button">
+            <span aria-hidden="true">⧉</span>复制内容
+          </button>
+          <button class="primary-button compact" id="exportButton" type="button">
+            <span aria-hidden="true">↓</span>导出成果单
+          </button>
+        </div>
+      </aside>
+
+      <div class="overlay" id="overlay"></div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

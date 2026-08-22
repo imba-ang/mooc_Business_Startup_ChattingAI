@@ -1,0 +1,15 @@
+{
+  "name": "qisi-ai-innovation-coach",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "面向创新创业课程的破—扩—筛三阶创新思维陪练",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "check": "node --check app.js && node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
