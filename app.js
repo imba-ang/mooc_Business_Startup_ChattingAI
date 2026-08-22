@@ -437,7 +437,7 @@ function renderTextInteraction(step) {
       <textarea
         class="answer-input"
         id="answerInput"
-        rows="3"
+        rows="2"
         maxlength="800"
         placeholder="${escapeHTML(step.placeholder)}"
         aria-describedby="answerHint"
@@ -997,6 +997,32 @@ document.querySelector("#mobileMenuButton").addEventListener("click", () => {
 elements.overlay.addEventListener("click", closePanels);
 document.querySelector("#copyButton").addEventListener("click", copyResult);
 document.querySelector("#exportButton").addEventListener("click", exportResult);
+
+elements.chatScroll.addEventListener("keydown", (event) => {
+  if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return;
+
+  const pageStep = Math.max(160, elements.chatScroll.clientHeight * 0.78);
+  const scrollActions = {
+    ArrowUp: -64,
+    ArrowDown: 64,
+    PageUp: -pageStep,
+    PageDown: pageStep,
+  };
+
+  if (event.key === "Home" || event.key === "End") {
+    event.preventDefault();
+    elements.chatScroll.scrollTo({
+      top: event.key === "Home" ? 0 : elements.chatScroll.scrollHeight,
+      behavior: "smooth",
+    });
+    return;
+  }
+
+  if (scrollActions[event.key]) {
+    event.preventDefault();
+    elements.chatScroll.scrollBy({ top: scrollActions[event.key], behavior: "smooth" });
+  }
+});
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
