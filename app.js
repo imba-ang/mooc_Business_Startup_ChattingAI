@@ -6,7 +6,7 @@ const STAGES = [
   { id: "break", icon: "破", title: "四问破题", subtitle: "重新表征问题" },
   { id: "expand", icon: "扩", title: "四维发散", subtitle: "打开方案空间" },
   { id: "screen", icon: "筛", title: "四则收敛", subtitle: "形成创新决策" },
-  { id: "result", icon: "果", title: "成果整理", subtitle: "责任检查与反思" },
+  { id: "result", icon: "果", title: "成果整理", subtitle: "思维反思与导出" },
 ];
 
 const CRITERIA = [
@@ -162,58 +162,6 @@ const TEXT_STEPS = {
     progress: 66,
     hint: "尝试改变流程结构，而不只是给原流程增加工具。",
   },
-  responsibility_user: {
-    stage: "result",
-    eyebrow: "成果整理",
-    title: "创新责任检查",
-    badge: "责任 1/4",
-    label: "用户价值",
-    placeholder: "它为核心用户带来什么可感知的价值？",
-    question: "回看你的优先方案：它为核心用户带来什么真实、可感知的价值？",
-    minLength: 6,
-    next: "responsibility_ethics",
-    progress: 90,
-    hint: "用用户能感受到的变化回答。",
-  },
-  responsibility_ethics: {
-    stage: "result",
-    eyebrow: "成果整理",
-    title: "隐私与伦理",
-    badge: "责任 2/4",
-    label: "隐私与伦理风险",
-    placeholder: "可能影响谁？需要怎样避免伤害或不公平？",
-    question: "这个方案可能带来哪些隐私、伦理或公平风险？你准备怎样降低风险？",
-    minLength: 6,
-    next: "responsibility_cost",
-    progress: 93,
-    hint: "考虑数据、知情同意、公平性与潜在负面影响。",
-  },
-  responsibility_cost: {
-    stage: "result",
-    eyebrow: "成果整理",
-    title: "资源与成本",
-    badge: "责任 3/4",
-    label: "资源与成本边界",
-    placeholder: "最小规模需要哪些人、时间、资金和技术？",
-    question: "如果先做一个最小可行尝试，需要哪些关键资源？成本边界在哪里？",
-    minLength: 6,
-    next: "responsibility_green",
-    progress: 95,
-    hint: "优先描述可以马上验证的最小行动。",
-  },
-  responsibility_green: {
-    stage: "result",
-    eyebrow: "成果整理",
-    title: "绿色与可持续",
-    badge: "责任 4/4",
-    label: "绿色与可持续性",
-    placeholder: "如何减少浪费，并让方案长期可持续？",
-    question: "这个方案怎样减少不必要的资源消耗，并具备持续运行的可能？",
-    minLength: 6,
-    next: "reflection",
-    progress: 97,
-    hint: "同时考虑环境成本与长期运营能力。",
-  },
   reflection: {
     stage: "result",
     eyebrow: "思维反思",
@@ -283,6 +231,34 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved?.version === SESSION_VERSION && saved.step && Array.isArray(saved.messages)) {
+      const removedSteps = ["responsibility_user", "responsibility_ethics", "responsibility_cost", "responsibility_green"];
+      const wasRemovedStep = removedSteps.includes(saved.step);
+      let migrated = false;
+      removedSteps.forEach((step) => {
+        if (Object.prototype.hasOwnProperty.call(saved.answers || {}, step)) {
+          delete saved.answers[step];
+          migrated = true;
+        }
+      });
+
+      const removedMessageStart = saved.messages.findIndex((message) => message.text?.includes("接下来做创新责任检查"));
+      if (removedMessageStart >= 0) {
+        const removedMessageEnd = saved.messages.findIndex(
+          (message, index) => index >= removedMessageStart && message.text?.includes("责任检查完成"),
+        );
+        const deleteCount = removedMessageEnd >= 0
+          ? removedMessageEnd - removedMessageStart + 1
+          : saved.messages.length - removedMessageStart;
+        saved.messages.splice(removedMessageStart, deleteCount);
+        migrated = true;
+      }
+
+      if (wasRemovedStep) {
+        saved.step = "reflection";
+        saved.messages.push({ role: "coach", text: TEXT_STEPS.reflection.question });
+        migrated = true;
+      }
+      if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
       return saved;
     }
   } catch (error) {
@@ -380,7 +356,7 @@ function stageIntroCopy() {
     break: ["第一阶 · 破", "识别事实、约束与假设，重新表征问题。"],
     expand: ["第二阶 · 扩", "暂缓可行性判断，从不同类别打开解空间。"],
     screen: ["第三阶 · 筛", "不算简单总分，用四则比较后由你做决定。"],
-    result: ["成果整理", "检查创新责任，并回看思维发生变化的地方。"],
+    result: ["成果整理", "回看思维发生变化的地方，并整理训练成果。"],
   };
   return copies[currentStage()];
 }
@@ -646,8 +622,8 @@ function renderDecision() {
     const candidate = state.candidates.find((item) => item.id === selected.value);
     state.decision = { candidateId: selected.value, reason };
     addMessage("user", `我选择 ${candidate.name}：${candidate.text}\n理由：${reason}`);
-    addMessage("coach", "选择来自你的比较与判断。四则收敛不是寻找绝对最优，而是筛出当前情境下更值得行动的方案。接下来做创新责任检查。\n" + TEXT_STEPS.responsibility_user.question);
-    state.step = "responsibility_user";
+    addMessage("coach", "选择来自你的比较与判断。四则收敛不是寻找绝对最优，而是筛出当前情境下更值得行动的方案。最后回看整个过程，思考哪一步改变了你的第一答案。\n" + TEXT_STEPS.reflection.question);
+    state.step = "reflection";
     commitAndRender();
   });
 }
@@ -686,8 +662,7 @@ function activeResultKey() {
   if (stage === "break") return "break";
   if (stage === "expand") return "expand";
   if (stage === "screen") return "screen";
-  if (["reflection", "complete"].includes(state.step)) return "reflection";
-  return "responsibility";
+  return "reflection";
 }
 
 function sectionMarkup(number, key, title, fields, done) {
@@ -742,17 +717,7 @@ function renderResults() {
         resultField("选择理由", state.decision.reason),
       Boolean(state.decision.candidateId),
     ),
-    sectionMarkup(
-      "05",
-      "responsibility",
-      "创新责任检查",
-      resultField("用户价值", state.answers.responsibility_user) +
-        resultField("隐私与伦理", state.answers.responsibility_ethics) +
-        resultField("资源与成本", state.answers.responsibility_cost) +
-        resultField("绿色与可持续", state.answers.responsibility_green),
-      Boolean(state.answers.responsibility_green),
-    ),
-    sectionMarkup("06", "reflection", "思维反思", resultField("思路改变", state.answers.reflection), state.step === "complete"),
+    sectionMarkup("05", "reflection", "思维反思", resultField("思路改变", state.answers.reflection), state.step === "complete"),
   ].join("");
 
   window.requestAnimationFrame(() => {
@@ -806,10 +771,6 @@ function feedbackFor(stepId, raw) {
     time: "时间维度已记录。现在换一个空间视角，看看场景结构能否变化。",
     space: "空间维度已打开。最后把整个过程拆开，从流程步骤寻找改变。",
     process: "四个维度都已有方向。现在检查方案是否来自不同类别，并形成 3—5 个候选方案。",
-    responsibility_user: "用户价值已经明确。接下来检查方案可能带来的隐私、伦理与公平风险。",
-    responsibility_ethics: "风险与应对已经记录。现在把方案缩小到现实可启动的资源边界。",
-    responsibility_cost: "最小行动的资源边界更清楚了。最后检查它能否绿色、持续地运行。",
-    responsibility_green: "责任检查完成。最后回看整个过程，只回答一个关于思维变化的问题。",
     reflection: "你的反思已经写入成果单。你完成了“重新表征 → 发散生成 → 聚合决策”的完整训练。",
   };
   return feedback[stepId] || "已记录。";
@@ -940,14 +901,7 @@ ${tableRows}
 - **最终优先方案：** ${priority ? `${priority.name}：${priority.text}` : "待完成"}
 - **选择理由：** ${state.decision.reason || "待完成"}
 
-## 五、创新责任检查
-
-- **用户价值：** ${value("responsibility_user")}
-- **隐私与伦理：** ${value("responsibility_ethics")}
-- **资源与成本：** ${value("responsibility_cost")}
-- **绿色与可持续：** ${value("responsibility_green")}
-
-## 六、思维反思
+## 五、思维反思
 
 ${value("reflection")}
 `;
@@ -1067,12 +1021,7 @@ function wordDocumentXML() {
     screeningBlocks,
     wordField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "待完成"),
     wordField("选择理由", state.decision.reason || "待完成"),
-    wordParagraph(wordRun("五、创新责任检查"), "Heading1"),
-    wordField("用户价值", value("responsibility_user")),
-    wordField("隐私与伦理", value("responsibility_ethics")),
-    wordField("资源与成本", value("responsibility_cost")),
-    wordField("绿色与可持续", value("responsibility_green")),
-    wordParagraph(wordRun("六、思维反思"), "Heading1"),
+    wordParagraph(wordRun("五、思维反思"), "Heading1"),
     wordParagraph(wordRun(value("reflection"))),
   ].join("");
 
