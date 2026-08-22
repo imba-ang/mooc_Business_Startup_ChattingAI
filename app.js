@@ -953,6 +953,313 @@ ${value("reflection")}
 `;
 }
 
+function escapeXML(value = "") {
+  return String(value)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+function wordRun(value, { bold = false, color = "", size = "" } = {}) {
+  const properties = [
+    '<w:rFonts w:ascii="Hiragino Sans GB" w:hAnsi="Hiragino Sans GB" w:eastAsia="Hiragino Sans GB" w:cs="Hiragino Sans GB"/>',
+    '<w:lang w:val="zh-CN" w:eastAsia="zh-CN"/>',
+    bold ? "<w:b/>" : "",
+    color ? `<w:color w:val="${color}"/>` : "",
+    size ? `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` : "",
+  ].join("");
+  const runProperties = properties ? `<w:rPr>${properties}</w:rPr>` : "";
+
+  return String(value).split("\n").map((line, index) => {
+    const breakRun = index ? "<w:r><w:br/></w:r>" : "";
+    return `${breakRun}<w:r>${runProperties}<w:t xml:space="preserve">${escapeXML(line)}</w:t></w:r>`;
+  }).join("");
+}
+
+function wordParagraph(content, style = "Normal") {
+  return `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>${content}</w:p>`;
+}
+
+function wordField(label, value) {
+  return wordParagraph(
+    wordRun(`${label}：`, { bold: true, color: "1D4ED8" }) + wordRun(value || "待完成"),
+  );
+}
+
+function wordTableCell(value, width, { label = false } = {}) {
+  const fill = label ? '<w:shd w:val="clear" w:color="auto" w:fill="E8EEF5"/>' : "";
+  return `<w:tc>
+    <w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${fill}<w:vAlign w:val="center"/></w:tcPr>
+    <w:p><w:pPr><w:spacing w:after="0" w:line="300" w:lineRule="auto"/></w:pPr>${wordRun(value || "待完成", {
+      bold: label,
+      color: label ? "1F4D78" : "",
+      size: "20",
+    })}</w:p>
+  </w:tc>`;
+}
+
+function wordLabelTable(rows) {
+  const labelWidth = 1700;
+  const detailWidth = 7660;
+  const tableRows = rows.map(([label, value]) => `<w:tr>${wordTableCell(label, labelWidth, { label: true })}${wordTableCell(value, detailWidth)}</w:tr>`).join("");
+
+  return `<w:tbl>
+    <w:tblPr>
+      <w:tblW w:w="9360" w:type="dxa"/>
+      <w:tblInd w:w="120" w:type="dxa"/>
+      <w:tblLayout w:type="fixed"/>
+      <w:tblBorders>
+        <w:top w:val="single" w:sz="4" w:color="CBD5E1"/>
+        <w:left w:val="single" w:sz="4" w:color="CBD5E1"/>
+        <w:bottom w:val="single" w:sz="4" w:color="CBD5E1"/>
+        <w:right w:val="single" w:sz="4" w:color="CBD5E1"/>
+        <w:insideH w:val="single" w:sz="4" w:color="CBD5E1"/>
+        <w:insideV w:val="single" w:sz="4" w:color="CBD5E1"/>
+      </w:tblBorders>
+      <w:tblCellMar>
+        <w:top w:w="80" w:type="dxa"/><w:left w:w="120" w:type="dxa"/>
+        <w:bottom w:w="80" w:type="dxa"/><w:right w:w="120" w:type="dxa"/>
+      </w:tblCellMar>
+    </w:tblPr>
+    <w:tblGrid><w:gridCol w:w="${labelWidth}"/><w:gridCol w:w="${detailWidth}"/></w:tblGrid>
+    ${tableRows}
+  </w:tbl>`;
+}
+
+function wordDocumentXML() {
+  const value = (key) => state.answers[key] || "待完成";
+  const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
+  const screeningBlocks = state.candidates.map((candidate) => {
+    const checks = state.screening[candidate.id] || {};
+    return [
+      wordParagraph(wordRun(`${candidate.name}：${candidate.text}`), "Heading2"),
+      wordLabelTable([
+        ["用户", checks.user || "待完成"],
+        ["痛点", checks.pain || "待完成"],
+        ["资源", checks.resource || "待完成"],
+        ["目标", checks.goal || "待完成"],
+      ]),
+    ].join("");
+  }).join("") || [
+    wordParagraph(wordRun("候选方案待形成"), "Heading2"),
+    wordLabelTable([["筛选进度", "待完成"]]),
+  ].join("");
+
+  const content = [
+    wordParagraph(wordRun("三阶创新思维迁移任务成果单"), "Title"),
+    wordParagraph(wordRun(`生成时间：${new Date().toLocaleString("zh-CN")}`), "Subtitle"),
+    wordParagraph(wordRun("一、原始问题"), "Heading1"),
+    wordField("真实问题", value("problem")),
+    wordParagraph(wordRun("二、破：四问破题"), "Heading1"),
+    wordField("事实", value("facts")),
+    wordField("约束", value("constraints")),
+    wordField("隐藏假设", value("assumptions")),
+    wordField("重构后的问题", value("reframe")),
+    wordParagraph(wordRun("三、扩：四维发散"), "Heading1"),
+    wordField("对象", value("object")),
+    wordField("时间", value("time")),
+    wordField("空间", value("space")),
+    wordField("流程", value("process")),
+    wordParagraph(wordRun("四、筛：四则收敛"), "Heading1"),
+    screeningBlocks,
+    wordField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "待完成"),
+    wordField("选择理由", state.decision.reason || "待完成"),
+    wordParagraph(wordRun("五、创新责任检查"), "Heading1"),
+    wordField("用户价值", value("responsibility_user")),
+    wordField("隐私与伦理", value("responsibility_ethics")),
+    wordField("资源与成本", value("responsibility_cost")),
+    wordField("绿色与可持续", value("responsibility_green")),
+    wordParagraph(wordRun("六、思维反思"), "Heading1"),
+    wordParagraph(wordRun(value("reflection"))),
+  ].join("");
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    ${content}
+    <w:sectPr>
+      <w:footerReference w:type="default" r:id="rId2"/>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/>
+      <w:cols w:space="708"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+}
+
+function wordStylesXML() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults>
+    <w:rPrDefault><w:rPr><w:rFonts w:ascii="Hiragino Sans GB" w:hAnsi="Hiragino Sans GB" w:eastAsia="Hiragino Sans GB" w:cs="Hiragino Sans GB"/><w:lang w:val="zh-CN" w:eastAsia="zh-CN"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:color w:val="1E293B"/></w:rPr></w:rPrDefault>
+    <w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="300" w:lineRule="auto"/></w:pPr></w:pPrDefault>
+  </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/><w:qFormat/>
+    <w:pPr><w:spacing w:before="0" w:after="120" w:line="300" w:lineRule="auto"/></w:pPr>
+    <w:rPr><w:rFonts w:ascii="Hiragino Sans GB" w:hAnsi="Hiragino Sans GB" w:eastAsia="Hiragino Sans GB" w:cs="Hiragino Sans GB"/><w:lang w:val="zh-CN" w:eastAsia="zh-CN"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:color w:val="1E293B"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Title">
+    <w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Subtitle"/><w:qFormat/>
+    <w:pPr><w:spacing w:before="0" w:after="120"/><w:keepNext/></w:pPr>
+    <w:rPr><w:b/><w:color w:val="173B7A"/><w:sz w:val="44"/><w:szCs w:val="44"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Subtitle">
+    <w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>
+    <w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr>
+    <w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1">
+    <w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:uiPriority w:val="9"/>
+    <w:pPr><w:keepNext/><w:spacing w:before="360" w:after="200"/><w:outlineLvl w:val="0"/></w:pPr>
+    <w:rPr><w:b/><w:color w:val="2E74B5"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading2">
+    <w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:uiPriority w:val="9"/>
+    <w:pPr><w:keepNext/><w:spacing w:before="280" w:after="140"/><w:outlineLvl w:val="1"/></w:pPr>
+    <w:rPr><w:b/><w:color w:val="2E74B5"/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr>
+  </w:style>
+</w:styles>`;
+}
+
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function zipWordFiles(files) {
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+  const header = (size) => new DataView(new ArrayBuffer(size));
+  const bytesOf = (view) => new Uint8Array(view.buffer);
+
+  files.forEach(([name, content]) => {
+    const nameBytes = encoder.encode(name);
+    const data = encoder.encode(content);
+    const checksum = crc32(data);
+    const local = header(30);
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(6, 0x0800, true);
+    local.setUint16(8, 0, true);
+    local.setUint16(10, dosTime, true);
+    local.setUint16(12, dosDate, true);
+    local.setUint32(14, checksum, true);
+    local.setUint32(18, data.length, true);
+    local.setUint32(22, data.length, true);
+    local.setUint16(26, nameBytes.length, true);
+    local.setUint16(28, 0, true);
+    localParts.push(bytesOf(local), nameBytes, data);
+
+    const central = header(46);
+    central.setUint32(0, 0x02014b50, true);
+    central.setUint16(4, 20, true);
+    central.setUint16(6, 20, true);
+    central.setUint16(8, 0x0800, true);
+    central.setUint16(10, 0, true);
+    central.setUint16(12, dosTime, true);
+    central.setUint16(14, dosDate, true);
+    central.setUint32(16, checksum, true);
+    central.setUint32(20, data.length, true);
+    central.setUint32(24, data.length, true);
+    central.setUint16(28, nameBytes.length, true);
+    central.setUint16(30, 0, true);
+    central.setUint16(32, 0, true);
+    central.setUint16(34, 0, true);
+    central.setUint16(36, 0, true);
+    central.setUint32(38, 0, true);
+    central.setUint32(42, offset, true);
+    centralParts.push(bytesOf(central), nameBytes);
+    offset += 30 + nameBytes.length + data.length;
+  });
+
+  const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+  const end = header(22);
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(4, 0, true);
+  end.setUint16(6, 0, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, offset, true);
+  end.setUint16(20, 0, true);
+
+  return new Blob([...localParts, ...centralParts, bytesOf(end)], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+}
+
+function wordResultBlob() {
+  const now = new Date().toISOString();
+  return zipWordFiles([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+        <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+        <Default Extension="xml" ContentType="application/xml"/>
+        <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+        <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+        <Override PartName="/word/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>
+        <Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>
+        <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+        <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+      </Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+        <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+        <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+        <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+      </Relationships>`],
+    ["word/document.xml", wordDocumentXML()],
+    ["word/styles.xml", wordStylesXML()],
+    ["word/fontTable.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:font w:name="Hiragino Sans GB"><w:charset w:val="86"/><w:family w:val="swiss"/><w:pitch w:val="variable"/></w:font>
+      </w:fonts>`],
+    ["word/footer1.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:p><w:pPr><w:jc w:val="right"/><w:pBdr><w:top w:val="single" w:sz="4" w:space="6" w:color="D6E4F5"/></w:pBdr></w:pPr>
+          ${wordRun("启思 · AI 创新陪练  |  第 ", { color: "64748B", size: "18" })}
+          <w:r><w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/></w:rPr><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>
+          <w:r><w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/></w:rPr><w:t>1</w:t></w:r>
+          <w:r><w:rPr><w:color w:val="64748B"/><w:sz w:val="18"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>
+          ${wordRun(" 页", { color: "64748B", size: "18" })}
+        </w:p>
+      </w:ftr>`],
+    ["word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+        <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+        <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>
+        <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>
+      </Relationships>`],
+    ["docProps/core.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <dc:title>三阶创新思维迁移任务成果单</dc:title><dc:creator>启思 · AI 创新陪练</dc:creator>
+        <dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>
+      </cp:coreProperties>`],
+    ["docProps/app.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+        <Application>启思 · AI 创新陪练</Application><AppVersion>1.0</AppVersion>
+      </Properties>`],
+  ]);
+}
+
 async function copyResult() {
   try {
     await navigator.clipboard.writeText(markdownResult());
@@ -963,16 +1270,16 @@ async function copyResult() {
 }
 
 function exportResult() {
-  const blob = new Blob([markdownResult()], { type: "text/markdown;charset=utf-8" });
+  const blob = wordResultBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `三阶创新思维迁移任务成果单-${new Date().toISOString().slice(0, 10)}.md`;
+  link.download = `三阶创新思维迁移任务成果单-${new Date().toISOString().slice(0, 10)}.docx`;
   document.body.append(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
-  showToast("成果单已导出");
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast("Word 成果单已导出");
 }
 
 function showToast(message) {
