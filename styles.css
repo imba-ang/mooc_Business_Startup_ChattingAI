@@ -243,37 +243,10 @@ a:focus-visible {
   font-weight: 800;
 }
 
-.principle-card {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-  padding: 14px;
-  border: 1px solid #dce9fb;
-  border-radius: 13px;
-  background: linear-gradient(145deg, #f5f9ff, #edf5ff);
-}
-
-.principle-icon {
-  color: var(--blue-600);
-  font-size: 17px;
-}
-
-.principle-card strong {
-  color: var(--blue-800);
-  font-size: 12px;
-}
-
-.principle-card p {
-  margin: 5px 0 0;
-  color: var(--ink-500);
-  font-size: 11px;
-  line-height: 1.55;
-}
-
 .sidebar-footer {
   display: grid;
   gap: 5px;
-  margin-top: 12px;
+  margin-top: auto;
   padding-top: 12px;
   border-top: 1px solid var(--line-soft);
 }
