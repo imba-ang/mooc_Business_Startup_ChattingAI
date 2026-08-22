@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#1467e8" />
     <title>启思 · AI 创新陪练</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260822.3" />
   </head>
   <body>
     <a class="skip-link" href="#workspace">跳到陪练区</a>
@@ -46,7 +46,7 @@
             <span aria-hidden="true">⌗</span>
             <span>教学展示模式</span>
           </button>
-          <button class="sidebar-action danger" id="resetButton" type="button">
+          <button class="sidebar-action danger" id="resetButton" data-reset-session type="button">
             <span aria-hidden="true">↻</span>
             <span>重新开始</span>
           </button>
@@ -69,6 +69,10 @@
             <span class="saved-status" id="savedStatus" role="status">
               <span class="saved-dot"></span>进度已保存
             </span>
+            <button class="topbar-reset" id="resetTopButton" data-reset-session type="button" aria-label="重启训练进度">
+              <span aria-hidden="true">↻</span>
+              <span>重启进度</span>
+            </button>
             <button class="icon-button" id="resultToggleButton" type="button" aria-label="查看成果单">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v14A1.5 1.5 0 0 1 17 20.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></svg>
             </button>
@@ -95,7 +99,7 @@
           </div>
           <button class="result-close" id="resultCloseButton" type="button" aria-label="关闭成果单">×</button>
         </div>
-        <p class="result-description">你的回答会在这里自动整理，完成后可直接导出。</p>
+        <p class="result-description">你的回答会在这里自动整理，并跟随当前训练阶段移动。</p>
         <div class="result-content" id="resultContent"></div>
         <div class="result-footer">
           <button class="secondary-button" id="copyButton" type="button">
@@ -111,6 +115,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=20260822.3"></script>
   </body>
 </html>

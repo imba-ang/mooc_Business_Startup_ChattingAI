@@ -680,13 +680,24 @@ function resultField(label, value) {
   return `<dl class="result-field"><dt>${escapeHTML(label)}</dt><dd class="${value ? "" : "empty"}">${escapeHTML(value || "等待你的回答……")}</dd></dl>`;
 }
 
-function sectionMarkup(number, title, fields, done) {
+function activeResultKey() {
+  const stage = currentStage();
+  if (stage === "start") return "problem";
+  if (stage === "break") return "break";
+  if (stage === "expand") return "expand";
+  if (stage === "screen") return "screen";
+  if (["reflection", "complete"].includes(state.step)) return "reflection";
+  return "responsibility";
+}
+
+function sectionMarkup(number, key, title, fields, done) {
+  const active = key === activeResultKey();
   return `
-    <section class="result-section">
+    <section class="result-section ${active ? "active" : ""}" data-result-key="${key}" ${active ? 'aria-current="step"' : ""}>
       <div class="result-section-header">
         <span class="result-section-number">${number}</span>
         <strong>${escapeHTML(title)}</strong>
-        <span class="result-section-status ${done ? "done" : ""}">${done ? "已完成" : "进行中"}</span>
+        <span class="result-section-status ${done ? "done" : ""}">${done ? "已完成" : active ? "进行中" : "待完成"}</span>
       </div>
       <div class="result-section-body">${fields}</div>
     </section>`;
@@ -701,9 +712,10 @@ function renderResults() {
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
 
   elements.resultContent.innerHTML = [
-    sectionMarkup("01", "原始问题", resultField("真实问题", state.answers.problem), Boolean(state.answers.problem)),
+    sectionMarkup("01", "problem", "原始问题", resultField("真实问题", state.answers.problem), Boolean(state.answers.problem)),
     sectionMarkup(
       "02",
+      "break",
       "破 · 四问破题",
       resultField("事实", state.answers.facts) +
         resultField("约束", state.answers.constraints) +
@@ -713,6 +725,7 @@ function renderResults() {
     ),
     sectionMarkup(
       "03",
+      "expand",
       "扩 · 四维发散",
       resultField("对象", state.answers.object) +
         resultField("时间", state.answers.time) +
@@ -722,6 +735,7 @@ function renderResults() {
     ),
     sectionMarkup(
       "04",
+      "screen",
       "筛 · 四则收敛",
       (screenedCandidates || resultField("候选方案", "")) +
         resultField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "") +
@@ -730,6 +744,7 @@ function renderResults() {
     ),
     sectionMarkup(
       "05",
+      "responsibility",
       "创新责任检查",
       resultField("用户价值", state.answers.responsibility_user) +
         resultField("隐私与伦理", state.answers.responsibility_ethics) +
@@ -737,8 +752,15 @@ function renderResults() {
         resultField("绿色与可持续", state.answers.responsibility_green),
       Boolean(state.answers.responsibility_green),
     ),
-    sectionMarkup("06", "思维反思", resultField("思路改变", state.answers.reflection), state.step === "complete"),
+    sectionMarkup("06", "reflection", "思维反思", resultField("思路改变", state.answers.reflection), state.step === "complete"),
   ].join("");
+
+  window.requestAnimationFrame(() => {
+    const activeSection = elements.resultContent.querySelector(".result-section.active");
+    if (!activeSection) return;
+    const targetTop = activeSection.offsetTop - elements.resultContent.offsetTop;
+    elements.resultContent.scrollTo({ top: Math.max(0, targetTop - 4), behavior: "smooth" });
+  });
 }
 
 function validateText(stepId, raw) {
@@ -972,7 +994,7 @@ function closePanels() {
   elements.overlay.classList.remove("open");
 }
 
-document.querySelector("#resetButton").addEventListener("click", () => {
+function resetSession() {
   if (!window.confirm("确定要清除本次训练的全部回答并重新开始吗？")) return;
   localStorage.removeItem(STORAGE_KEY);
   state = createInitialState();
@@ -980,6 +1002,10 @@ document.querySelector("#resetButton").addEventListener("click", () => {
   commitAndRender();
   elements.chatScroll.scrollTop = 0;
   showToast("已开始一轮新的训练");
+}
+
+document.querySelectorAll("[data-reset-session]").forEach((button) => {
+  button.addEventListener("click", resetSession);
 });
 
 document.querySelector("#presentationButton").addEventListener("click", () => {
