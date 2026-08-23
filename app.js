@@ -236,6 +236,7 @@ const elements = {
 let state = loadState();
 let saveTimer;
 let toastTimer;
+let fireworksTimer;
 let activeRecognition = null;
 let activeVoiceButton = null;
 
@@ -260,7 +261,7 @@ function createInitialState() {
     candidates: [],
     screening: {},
     screeningCursor: { candidate: 0, criterion: 0 },
-    decision: { candidateId: "", reason: "" },
+    decision: { candidateId: "" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -834,22 +835,14 @@ function renderDecision() {
       </div>
       <div class="special-body">
         ${options}
-        <div class="decision-reason">
-          <label for="decisionReason">选择理由</label>
-          <textarea id="decisionReason" maxlength="800" placeholder="请综合用户、痛点、资源和目标说明理由" required></textarea>
-        </div>
       </div>
       <div class="special-footer">
         <span class="selection-count">决定权在你手中</span>
-        <div class="form-actions">
-          ${voiceInputButton("decisionReason")}
-          <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
-        </div>
+        <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
       </div>
     </form>`;
 
   const form = document.querySelector("#decisionForm");
-  setupVoiceInput(document.querySelector("#decisionReason"));
   form.querySelectorAll('input[name="priority"]').forEach((input) => {
     input.addEventListener("change", () => {
       form.querySelectorAll("[data-choice-card]").forEach((card) => {
@@ -860,22 +853,56 @@ function renderDecision() {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const selected = form.querySelector('input[name="priority"]:checked');
-    const reason = document.querySelector("#decisionReason").value.trim();
     if (!selected) {
       showToast("请先选择一个当前最值得行动的方案");
       return;
     }
-    if (reason.length < 8) {
-      showToast("请再具体说明选择依据");
-      return;
-    }
     const candidate = state.candidates.find((item) => item.id === selected.value);
-    state.decision = { candidateId: selected.value, reason };
-    addMessage("user", `我选择 ${candidate.name}：${candidate.text}\n理由：${reason}`);
+    state.decision = { candidateId: selected.value };
+    addMessage("user", `我选择 ${candidate.name}：${candidate.text}`);
     addMessage("coach", "选择来自你的比较与判断。四则收敛不是寻找绝对最优，而是筛出当前情境下更值得行动的方案。最后回看整个过程，思考哪一步改变了你的第一答案。\n" + TEXT_STEPS.reflection.question);
     state.step = "reflection";
     commitAndRender();
   });
+}
+
+function launchFireworks() {
+  document.querySelector(".fireworks-layer")?.remove();
+  window.clearTimeout(fireworksTimer);
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const layer = document.createElement("div");
+  layer.className = "fireworks-layer";
+  layer.setAttribute("aria-hidden", "true");
+  const bursts = [
+    { x: 18, y: 25, color: "#2f75e8", delay: 0, distance: 66 },
+    { x: 79, y: 21, color: "#ffb52e", delay: 0.35, distance: 72 },
+    { x: 34, y: 13, color: "#20b486", delay: 0.7, distance: 58 },
+    { x: 66, y: 33, color: "#8b5cf6", delay: 1.05, distance: 68 },
+    { x: 49, y: 20, color: "#ef5da8", delay: 1.35, distance: 76 },
+  ];
+
+  bursts.forEach((config) => {
+    const burst = document.createElement("span");
+    burst.className = "firework-burst";
+    burst.style.setProperty("--burst-x", `${config.x}%`);
+    burst.style.setProperty("--burst-y", `${config.y}%`);
+    burst.style.setProperty("--burst-color", config.color);
+    burst.style.setProperty("--burst-delay", `${config.delay}s`);
+    for (let index = 0; index < 14; index += 1) {
+      const spark = document.createElement("span");
+      spark.className = "firework-spark";
+      spark.style.setProperty("--spark-color", config.color);
+      spark.style.setProperty("--spark-angle", `${(360 / 14) * index}deg`);
+      spark.style.setProperty("--spark-distance", `${config.distance + (index % 3) * 8}px`);
+      spark.style.setProperty("--spark-delay", `${config.delay + (index % 2) * 0.035}s`);
+      burst.append(spark);
+    }
+    layer.append(burst);
+  });
+
+  document.body.append(layer);
+  fireworksTimer = window.setTimeout(() => layer.remove(), 3600);
 }
 
 function renderCompletion() {
@@ -891,6 +918,7 @@ function renderCompletion() {
     </div>`;
   document.querySelector("#completionReview").addEventListener("click", openResultPanel);
   document.querySelector("#completionExport").addEventListener("click", exportResult);
+  window.setTimeout(launchFireworks, 100);
 }
 
 function renderInteraction() {
@@ -967,8 +995,7 @@ function renderResults() {
       "screen",
       "筛 · 四则收敛",
       (screenedCandidates || resultField("候选方案", "")) +
-        resultField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "") +
-        resultField("选择理由", state.decision.reason),
+        resultField("最终优先方案", priority ? `${priority.name}：${priority.text}` : ""),
       Boolean(state.decision.candidateId),
     ),
     sectionMarkup("05", "reflection", "思维反思", resultField("思路改变", state.answers.reflection), state.step === "complete"),
@@ -1146,7 +1173,6 @@ ${value("problem")}
 ${tableRows}
 
 - **最终优先方案：** ${priority ? `${priority.name}：${priority.text}` : "待完成"}
-- **选择理由：** ${state.decision.reason || "待完成"}
 
 ## 五、思维反思
 
@@ -1268,7 +1294,6 @@ function wordDocumentXML() {
     wordParagraph(wordRun("四、筛：四则收敛"), "Heading1"),
     screeningBlocks,
     wordField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "待完成"),
-    wordField("选择理由", state.decision.reason || "待完成"),
     wordParagraph(wordRun("五、思维反思"), "Heading1"),
     wordParagraph(wordRun(value("reflection"))),
   ].join("");

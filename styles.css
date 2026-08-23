@@ -1063,32 +1063,84 @@ a:focus-visible {
   box-shadow: 0 -8px 18px rgba(35, 71, 118, 0.05);
 }
 
-.decision-reason {
-  display: grid;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.decision-reason label {
-  color: var(--ink-700);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.decision-reason textarea {
-  min-height: 68px;
-  max-height: 136px;
-  padding: 11px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  resize: vertical;
-  outline: none;
-  line-height: 1.55;
-}
-
 .completion-shell {
   padding: 28px;
   text-align: center;
+}
+
+.fireworks-layer {
+  position: fixed;
+  z-index: 140;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.firework-burst {
+  position: absolute;
+  top: var(--burst-y);
+  left: var(--burst-x);
+  width: 0;
+  height: 0;
+}
+
+.firework-burst::after {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--burst-color);
+  border-radius: 999px;
+  content: "";
+  opacity: 0;
+  animation: firework-core 0.7s ease-out var(--burst-delay) both;
+}
+
+.firework-spark {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 9px;
+  height: 5px;
+  border-radius: 999px;
+  color: var(--spark-color);
+  opacity: 0;
+  background: currentColor;
+  box-shadow: 0 0 9px currentColor;
+  animation: firework-spark 1.3s cubic-bezier(0.16, 0.8, 0.3, 1) var(--spark-delay) both;
+}
+
+@keyframes firework-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(3.1);
+  }
+}
+
+@keyframes firework-spark {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--spark-angle)) translateX(0) scale(0.3);
+  }
+
+  14% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: rotate(var(--spark-angle)) translateX(var(--spark-distance)) scale(0.12);
+  }
 }
 
 .completion-mark {
@@ -1605,6 +1657,10 @@ body.presentation-mode::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .fireworks-layer {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {
