@@ -908,7 +908,7 @@ function renderCompletion() {
   elements.interactionCard.innerHTML = `
     <div class="completion-shell">
       <div class="completion-mark" aria-hidden="true">✓</div>
-      <h3>你完成了一次完整的创新思维迁移</h3>
+      <h3>你完成了一次完整的创新思维训练</h3>
       <p>从重新表征，到发散生成，再到聚合决策。答案来自你的思考，成果单已经整理完成。</p>
       <div class="completion-actions">
         <button class="secondary-button" id="completionReview" type="button">查看成果单</button>
@@ -1143,7 +1143,7 @@ function markdownResult() {
     return `| ${candidate.name}：${safe(candidate.text)} | ${safe(checks.user)} | ${safe(checks.pain)} | ${safe(checks.resource)} | ${safe(checks.goal)} | ${screeningConclusion(checks).label} |`;
   }).join("\n") || "| 待形成 | 待完成 | 待完成 | 待完成 | 待完成 | 待完成 |";
 
-  return `# 三阶创新思维迁移任务成果单
+  return `# 三阶创新思维训练任务成果单
 
 生成时间：${new Date().toLocaleString("zh-CN")}
 
@@ -1276,7 +1276,7 @@ function wordDocumentXML() {
   ].join("");
 
   const content = [
-    wordParagraph(wordRun("三阶创新思维迁移任务成果单"), "Title"),
+    wordParagraph(wordRun("三阶创新思维训练任务成果单"), "Title"),
     wordParagraph(wordRun(`生成时间：${new Date().toLocaleString("zh-CN")}`), "Subtitle"),
     wordParagraph(wordRun("一、原始问题"), "Heading1"),
     wordField("真实问题", value("problem")),
@@ -1471,7 +1471,7 @@ function wordResultBlob() {
       </Relationships>`],
     ["docProps/core.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <dc:title>三阶创新思维迁移任务成果单</dc:title><dc:creator>启思 · AI 创新陪练</dc:creator>
+        <dc:title>三阶创新思维训练任务成果单</dc:title><dc:creator>启思 · AI 创新陪练</dc:creator>
         <dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>
       </cp:coreProperties>`],
     ["docProps/app.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1495,7 +1495,7 @@ function exportResult() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `三阶创新思维迁移任务成果单-${new Date().toISOString().slice(0, 10)}.docx`;
+  link.download = `三阶创新思维训练任务成果单-${new Date().toISOString().slice(0, 10)}.docx`;
   document.body.append(link);
   link.click();
   link.remove();
