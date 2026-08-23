@@ -234,7 +234,7 @@ const elements = {
 let state = loadState();
 let saveTimer;
 let toastTimer;
-let fireworksTimer;
+let celebrationTimer;
 let activeRecognition = null;
 let activeVoiceButton = null;
 
@@ -862,43 +862,46 @@ function renderDecision() {
   });
 }
 
-function launchFireworks() {
-  document.querySelector(".fireworks-layer")?.remove();
-  window.clearTimeout(fireworksTimer);
+function launchCelebration() {
+  document.querySelector(".celebration-layer")?.remove();
+  window.clearTimeout(celebrationTimer);
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const layer = document.createElement("div");
-  layer.className = "fireworks-layer";
+  layer.className = "celebration-layer";
   layer.setAttribute("aria-hidden", "true");
-  const bursts = [
-    { x: 18, y: 25, color: "#2f75e8", delay: 0, distance: 66 },
-    { x: 79, y: 21, color: "#ffb52e", delay: 0.35, distance: 72 },
-    { x: 34, y: 13, color: "#20b486", delay: 0.7, distance: 58 },
-    { x: 66, y: 33, color: "#8b5cf6", delay: 1.05, distance: 68 },
-    { x: 49, y: 20, color: "#ef5da8", delay: 1.35, distance: 76 },
+  const colors = [
+    "#246fe5",
+    "#ffb020",
+    "#20b486",
+    "#8b5cf6",
+    "#ef5da8",
+    "#f25f5c",
+    "#20a4f3",
   ];
 
-  bursts.forEach((config) => {
-    const burst = document.createElement("span");
-    burst.className = "firework-burst";
-    burst.style.setProperty("--burst-x", `${config.x}%`);
-    burst.style.setProperty("--burst-y", `${config.y}%`);
-    burst.style.setProperty("--burst-color", config.color);
-    burst.style.setProperty("--burst-delay", `${config.delay}s`);
-    for (let index = 0; index < 14; index += 1) {
-      const spark = document.createElement("span");
-      spark.className = "firework-spark";
-      spark.style.setProperty("--spark-color", config.color);
-      spark.style.setProperty("--spark-angle", `${(360 / 14) * index}deg`);
-      spark.style.setProperty("--spark-distance", `${config.distance + (index % 3) * 8}px`);
-      spark.style.setProperty("--spark-delay", `${config.delay + (index % 2) * 0.035}s`);
-      burst.append(spark);
-    }
-    layer.append(burst);
-  });
+  for (let index = 0; index < 120; index += 1) {
+    const side = index % 2 === 0 ? "left" : "right";
+    const rank = Math.floor(index / 2);
+    const particle = document.createElement("span");
+    const isRibbon = rank % 4 === 0;
+    const isRound = !isRibbon && rank % 3 === 0;
+    const spin = (side === "left" ? 1 : -1) * (520 + (rank % 7) * 95);
+    particle.className = `celebration-particle ${side} ${isRibbon ? "ribbon" : "confetti"} ${isRound ? "round" : ""}`;
+    particle.style.setProperty("--particle-color", colors[index % colors.length]);
+    particle.style.setProperty("--particle-delay", `${(rank % 12) * 0.035}s`);
+    particle.style.setProperty("--particle-duration", `${2.9 + (rank % 6) * 0.16}s`);
+    particle.style.setProperty("--apex-x", `${(side === "left" ? 1 : -1) * (24 + (rank % 13) * 2.1)}vw`);
+    particle.style.setProperty("--apex-y", `${-(58 + (rank % 8) * 4.3)}vh`);
+    particle.style.setProperty("--end-x", `${(side === "left" ? 1 : -1) * (38 + (rank % 11) * 2.8)}vw`);
+    particle.style.setProperty("--end-y", `${8 + (rank % 5) * 3}vh`);
+    particle.style.setProperty("--particle-mid-spin", `${spin * 0.58}deg`);
+    particle.style.setProperty("--particle-spin", `${spin}deg`);
+    layer.append(particle);
+  }
 
   document.body.append(layer);
-  fireworksTimer = window.setTimeout(() => layer.remove(), 3600);
+  celebrationTimer = window.setTimeout(() => layer.remove(), 4800);
 }
 
 function renderCompletion() {
@@ -914,7 +917,7 @@ function renderCompletion() {
     </div>`;
   document.querySelector("#completionReview").addEventListener("click", openResultPanel);
   document.querySelector("#completionExport").addEventListener("click", exportResult);
-  window.setTimeout(launchFireworks, 100);
+  window.setTimeout(launchCelebration, 100);
 }
 
 function renderInteraction() {
