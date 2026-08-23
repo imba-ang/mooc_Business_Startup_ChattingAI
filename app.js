@@ -1,5 +1,23 @@
 const STORAGE_KEY = "qisi-innovation-coach-v1";
 const SESSION_VERSION = 2;
+const MIN_CANDIDATES = 2;
+const EXPAND_STEP_IDS = ["object", "time", "space", "process"];
+const WORKFLOW_STEPS = [
+  "problem",
+  "facts",
+  "constraints",
+  "assumptions",
+  "reframe",
+  ...EXPAND_STEP_IDS,
+  "candidate_select",
+  "screening",
+  "decision",
+  "reflection",
+  "complete",
+];
+const PREVIOUS_STEP = Object.fromEntries(
+  WORKFLOW_STEPS.slice(1).map((step, index) => [step, WORKFLOW_STEPS[index]]),
+);
 const STAGES = [
   { id: "start", icon: "启", title: "陪练启动", subtitle: "明确真实问题" },
   { id: "break", icon: "破", title: "四问破题", subtitle: "重新表征问题" },
@@ -85,11 +103,11 @@ const TEXT_STEPS = {
     badge: "准备开始",
     label: "你想解决的真实问题",
     placeholder: "例如：校园创新创业活动参与度不高……",
-    question: "请先把你要解决的真实问题告诉我。尽量描述真实场景，而不是直接给出解决方案。",
+    question: "你想解决什么真实问题？请说清人物、场景和困难。",
     minLength: 8,
     next: "facts",
     progress: 3,
-    hint: "先说清楚谁、在什么场景、遇到了什么问题。",
+    hint: "说清谁在什么场景遇到什么困难。",
   },
   facts: {
     stage: "break",
@@ -98,11 +116,11 @@ const TEXT_STEPS = {
     badge: "破 1/4",
     label: "列出 2—3 条可观察或验证的事实",
     placeholder: "一行一条，例如：过去三次活动的到场率均低于报名人数的 50%",
-    question: "关于这个问题，哪些信息是已经客观发生、可以被观察或验证的事实？请先列出 2—3 条。",
+    question: "列出 2—3 条可观察或验证的事实。",
     minLength: 8,
     next: "constraints",
     progress: 10,
-    hint: "事实可以被记录或验证；“我觉得”通常是观点。",
+    hint: "事实应当能被记录或验证。",
   },
   constraints: {
     stage: "break",
@@ -111,11 +129,11 @@ const TEXT_STEPS = {
     badge: "破 2/4",
     label: "写下当前必须面对的现实约束",
     placeholder: "可从时间、成本、空间、制度、技术等方面思考",
-    question: "哪些条件是当前必须面对、暂时不能忽略的现实约束？它们真的不能改变吗？",
+    question: "当前有哪些必须面对的现实约束？",
     minLength: 6,
     next: "assumptions",
     progress: 18,
-    hint: "区分“确实受限”和“过去一直这样做”。",
+    hint: "区分真实限制和惯常做法。",
   },
   assumptions: {
     stage: "break",
@@ -124,11 +142,11 @@ const TEXT_STEPS = {
     badge: "破 3/4",
     label: "识别 1—2 个尚未被证明的默认假设",
     placeholder: "例如：我们默认学生只有获得学分才愿意参加……",
-    question: "哪些条件是你习惯性认为“必须如此”，但其实并没有被证明？至少找出 1 个隐藏假设。",
+    question: "哪些“必须如此”的想法还没有被证明？",
     minLength: 6,
     next: "reframe",
     progress: 26,
-    hint: "追问自己：为什么必须这样？如果它不存在呢？",
+    hint: "追问：为什么必须这样？",
   },
   reframe: {
     stage: "break",
@@ -137,63 +155,63 @@ const TEXT_STEPS = {
     badge: "破 4/4",
     label: "写出一个能改变搜索方向的新问题",
     placeholder: "拿掉一个默认假设，重新表述问题……",
-    question: "如果暂时拿掉刚才发现的一个默认假设，你会怎样重新表述这个问题？",
+    question: "拿掉一个默认假设后，问题可以怎样重述？",
     minLength: 10,
     next: "object",
     progress: 34,
-    hint: "不只是换词，新问题应当打开不同的解决方向。",
+    hint: "新问题应当打开不同方向。",
   },
   object: {
     stage: "expand",
     eyebrow: "第二阶 · 扩",
     title: "对象：换谁？",
     badge: "扩 1/4",
-    label: "从参与者、角色或关系出发提出方案方向",
-    placeholder: "可以一行写一个方向；暂时不要判断可行性",
-    question: "目前的思路主要在改变谁？还能改变哪些参与者的行为、角色或关系？请提出至少一个方向。",
-    minLength: 6,
+    label: "对象维度的方案方向",
+    placeholder: "例如：让学生社团担任项目召集人",
+    question: "对象能怎么变？可以改变谁的角色、行为或关系？",
+    minLength: 0,
     next: "time",
     progress: 42,
-    hint: "关注不同利益相关者，而不是急着给出完整方案。",
+    hint: "本维度可以不填，也可以添加多个方向。",
   },
   time: {
     stage: "expand",
     eyebrow: "第二阶 · 扩",
     title: "时间：换何时？",
     badge: "扩 2/4",
-    label: "从时点或发生顺序出发提出方案方向",
+    label: "时间维度的方案方向",
     placeholder: "能否提前、延后，或改变发生顺序？",
-    question: "这个问题一定要在现在这个时点解决吗？能不能提前、延后，或者改变发生顺序？",
-    minLength: 6,
+    question: "时间能怎么变？可以提前、延后或调整顺序吗？",
+    minLength: 0,
     next: "space",
     progress: 50,
-    hint: "先打开可能性，不急着评价成本和难度。",
+    hint: "本维度可以不填，也可以添加多个方向。",
   },
   space: {
     stage: "expand",
     eyebrow: "第二阶 · 扩",
     title: "空间：换何处？",
     badge: "扩 3/4",
-    label: "从地点或空间结构出发提出方案方向",
+    label: "空间维度的方案方向",
     placeholder: "能否转移、分散、集中或重新组合？",
-    question: "问题一定要在当前地点或空间结构中解决吗？能否转移、分散、集中或重新组合？",
-    minLength: 6,
+    question: "空间能怎么变？可以转移、分散、集中或线上化吗？",
+    minLength: 0,
     next: "process",
     progress: 58,
-    hint: "空间既可以是物理地点，也可以是线上或组织空间。",
+    hint: "本维度可以不填，也可以添加多个方向。",
   },
   process: {
     stage: "expand",
     eyebrow: "第二阶 · 扩",
     title: "流程：换哪一步？",
     badge: "扩 4/4",
-    label: "从流程步骤出发提出方案方向",
+    label: "流程维度的方案方向",
     placeholder: "哪一步可以取消、前移、后移、拆分、合并或重做？",
-    question: "整个过程可以拆成哪些步骤？其中哪一步可以取消、前移、后移、拆分、合并或重新设计？",
-    minLength: 6,
+    question: "流程能怎么变？可以取消、拆分、合并或重排哪一步？",
+    minLength: 0,
     next: "candidate_select",
     progress: 66,
-    hint: "尝试改变流程结构，而不只是给原流程增加工具。",
+    hint: "本维度可以不填，也可以添加多个方向。",
   },
   reflection: {
     stage: "result",
@@ -202,11 +220,11 @@ const TEXT_STEPS = {
     badge: "最后一步",
     label: "你的思维反思",
     placeholder: "哪一步改变了你的第一答案？为什么？",
-    question: "与你最开始的第一答案相比，哪一步最明显地改变了你的思路？",
+    question: "哪一步最明显地改变了你的思路？",
     minLength: 8,
     next: "complete",
     progress: 99,
-    hint: "回看“破、扩、筛”中最关键的一次转折。",
+    hint: "回看“破、扩、筛”中的关键转折。",
   },
 };
 
@@ -260,6 +278,8 @@ function createInitialState() {
     screening: {},
     screeningCursor: { candidate: 0, criterion: 0 },
     decision: { candidateId: "" },
+    completedSteps: [],
+    history: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -297,13 +317,17 @@ function loadState() {
         migrated = true;
       }
 
-      // 兼容旧版允许选择 4—5 个候选方向的未完成筛选进度。
-      if (saved.step === "screening" && Array.isArray(saved.candidates) && saved.candidates.length > 3) {
-        saved.candidates = saved.candidates.slice(0, 3);
-        saved.screening = Object.fromEntries(
-          saved.candidates.map((candidate) => [candidate.id, saved.screening?.[candidate.id] || {}]),
-        );
-        saved.screeningCursor = { candidate: 0, criterion: 0 };
+      if (!Array.isArray(saved.completedSteps)) {
+        const currentIndex = WORKFLOW_STEPS.indexOf(saved.step);
+        saved.completedSteps = Object.keys(TEXT_STEPS).filter((stepId) => {
+          const stepIndex = WORKFLOW_STEPS.indexOf(stepId);
+          return Object.prototype.hasOwnProperty.call(saved.answers || {}, stepId)
+            || (currentIndex >= 0 && stepIndex >= 0 && stepIndex < currentIndex);
+        });
+        migrated = true;
+      }
+      if (!Array.isArray(saved.history)) {
+        saved.history = [];
         migrated = true;
       }
       if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
@@ -328,7 +352,7 @@ function saveState() {
 }
 
 function addMessage(role, text, status = "recorded") {
-  state.messages.push({ role, text, status, at: new Date().toISOString() });
+  state.messages.push({ role, text, status, step: state.step, at: new Date().toISOString() });
 }
 
 function escapeHTML(value = "") {
@@ -345,6 +369,123 @@ function meaningfulParts(value) {
     .split(/[\n；;。]+/)
     .map((item) => item.replace(/^\s*(?:[-•·]|\d+[.、）)])\s*/, "").trim())
     .filter((item) => item.length >= 3);
+}
+
+function directionParts(value) {
+  return String(value || "")
+    .split("\n")
+    .map((item) => item.replace(/^\s*(?:[-•·]|\d+[.、）)])\s*/, "").trim())
+    .filter(Boolean);
+}
+
+function cloneSession(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function preAnswerSnapshot() {
+  const snapshot = cloneSession(state);
+  delete snapshot.history;
+  const stepId = snapshot.step;
+
+  if (TEXT_STEPS[stepId]) {
+    delete snapshot.answers[stepId];
+    snapshot.completedSteps = (snapshot.completedSteps || []).filter((item) => item !== stepId);
+  } else if (stepId === "candidate_select") {
+    snapshot.candidates = [];
+    snapshot.screening = {};
+    snapshot.decision = { candidateId: "" };
+  } else if (stepId === "screening") {
+    snapshot.screening = Object.fromEntries(
+      snapshot.candidates.map((candidate) => [candidate.id, {}]),
+    );
+    snapshot.decision = { candidateId: "" };
+  } else if (stepId === "decision") {
+    snapshot.decision = { candidateId: "" };
+  }
+
+  return snapshot;
+}
+
+function rememberCurrentQuestion() {
+  state.history ||= [];
+  state.history.push(preAnswerSnapshot());
+  if (state.history.length > 24) state.history.shift();
+}
+
+function transitionMessageIndex(snapshot, targetStep) {
+  const messages = snapshot.messages || [];
+  const answer = snapshot.answers?.[targetStep];
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== "user") continue;
+    if (message.step === targetStep) return index;
+    if (TEXT_STEPS[targetStep] && answer && message.text === answer) return index;
+    if (targetStep === "candidate_select" && message.text.startsWith("我选择了 ")) return index;
+    if (targetStep === "screening" && message.text.startsWith("我已完成 ")) return index;
+    if (targetStep === "decision" && message.text.startsWith("我选择 ")) return index;
+  }
+  return -1;
+}
+
+function legacyPreviousSnapshot() {
+  const targetStep = PREVIOUS_STEP[state.step];
+  if (!targetStep) return null;
+
+  const snapshot = cloneSession(state);
+  const targetIndex = WORKFLOW_STEPS.indexOf(targetStep);
+  const messageIndex = transitionMessageIndex(snapshot, targetStep);
+  snapshot.messages = messageIndex >= 0
+    ? snapshot.messages.slice(0, messageIndex)
+    : snapshot.messages.slice(0, Math.max(2, snapshot.messages.length - 2));
+  snapshot.step = targetStep;
+  snapshot.history = [];
+
+  Object.keys(TEXT_STEPS).forEach((stepId) => {
+    if (WORKFLOW_STEPS.indexOf(stepId) < targetIndex) return;
+    delete snapshot.answers[stepId];
+    snapshot.completedSteps = (snapshot.completedSteps || []).filter((item) => item !== stepId);
+  });
+
+  if (targetIndex <= WORKFLOW_STEPS.indexOf("candidate_select")) {
+    snapshot.candidates = [];
+    snapshot.screening = {};
+    snapshot.decision = { candidateId: "" };
+  } else if (targetIndex <= WORKFLOW_STEPS.indexOf("screening")) {
+    snapshot.screening = Object.fromEntries(
+      snapshot.candidates.map((candidate) => [candidate.id, {}]),
+    );
+    snapshot.decision = { candidateId: "" };
+  } else if (targetIndex <= WORKFLOW_STEPS.indexOf("decision")) {
+    snapshot.decision = { candidateId: "" };
+  }
+
+  return snapshot;
+}
+
+function canGoBack() {
+  return Boolean(PREVIOUS_STEP[state.step]);
+}
+
+function backButtonMarkup() {
+  return canGoBack()
+    ? '<button class="secondary-button step-back-button" type="button" data-step-back><span aria-hidden="true">←</span> 上一题</button>'
+    : "";
+}
+
+function goBackOneQuestion() {
+  if (!canGoBack()) return;
+  stopActiveRecognition();
+  document.querySelector(".celebration-layer")?.remove();
+  const history = Array.isArray(state.history) ? [...state.history] : [];
+  const previous = history.pop() || legacyPreviousSnapshot();
+  if (!previous) return;
+  state = { ...previous, history };
+  commitAndRender();
+  showToast("已回到上一题，请重新作答");
+}
+
+function wireBackButton() {
+  document.querySelector("[data-step-back]")?.addEventListener("click", goBackOneQuestion);
 }
 
 function currentStage() {
@@ -368,10 +509,11 @@ function currentMeta() {
   }
 
   if (state.step === "screening") {
+    const candidateCount = state.candidates.length;
     return {
       eyebrow: "第三阶 · 筛",
-      title: "用四则表格筛选三个方案",
-      badge: "筛 · 3 × 4",
+      title: "用四则表格筛选候选方案",
+      badge: `筛 · ${candidateCount} × 4`,
       progress: 78,
     };
   }
@@ -590,6 +732,7 @@ function renderTextInteraction(step) {
       <div class="input-footer">
         <span class="input-hint" id="answerHint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> 提交 · ${escapeHTML(step.hint)}</span>
         <div class="form-actions">
+          ${backButtonMarkup()}
           ${voiceInputButton("answerInput")}
           <button class="submit-button" id="submitAnswer" type="submit">提交并继续 <span aria-hidden="true">→</span></button>
         </div>
@@ -598,6 +741,7 @@ function renderTextInteraction(step) {
 
   const form = document.querySelector("#answerForm");
   const input = document.querySelector("#answerInput");
+  wireBackButton();
   setupVoiceInput(input);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -612,6 +756,99 @@ function renderTextInteraction(step) {
   window.setTimeout(() => input.focus({ preventScroll: true }), 60);
 }
 
+function renderExpandInteraction(step) {
+  const storedIdeas = directionParts(state.answers[state.step]);
+  const ideas = storedIdeas.length ? storedIdeas : [""];
+
+  elements.interactionCard.innerHTML = `
+    <form class="input-shell expand-input-shell" id="expandAnswerForm">
+      <div class="expand-input-heading">
+        <div>
+          <span class="answer-label">${escapeHTML(step.label)}</span>
+          <p>${escapeHTML(step.hint)}</p>
+        </div>
+        <button class="secondary-button add-direction-button" id="addDirectionButton" type="button"><span aria-hidden="true">＋</span> 新增方向</button>
+      </div>
+      <div class="expand-idea-list" id="expandIdeaList"></div>
+      <div class="input-footer">
+        <span class="input-hint" id="expandDirectionCount"></span>
+        <div class="form-actions">
+          ${backButtonMarkup()}
+          <button class="submit-button" id="submitExpandAnswer" type="submit">提交并继续 <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </form>`;
+
+  const form = document.querySelector("#expandAnswerForm");
+  const list = document.querySelector("#expandIdeaList");
+  const count = document.querySelector("#expandDirectionCount");
+  const submitButton = document.querySelector("#submitExpandAnswer");
+  const addButton = document.querySelector("#addDirectionButton");
+
+  const renderIdeaRows = (focusIndex = -1) => {
+    stopActiveRecognition();
+    if (!ideas.length) {
+      list.innerHTML = '<div class="expand-empty-state">本维度暂不填写。需要时可新增方向。</div>';
+    } else {
+      list.innerHTML = ideas.map((idea, index) => {
+        const inputId = `expandIdea-${index}`;
+        return `
+          <div class="expand-idea-row">
+            <label for="${inputId}">方向 ${index + 1}</label>
+            <textarea
+              class="expand-idea-input"
+              id="${inputId}"
+              rows="1"
+              maxlength="300"
+              placeholder="${escapeHTML(step.placeholder)}"
+            >${escapeHTML(idea)}</textarea>
+            ${voiceInputButton(inputId)}
+            <button class="remove-direction-button" type="button" data-remove-direction="${index}" aria-label="删除方向 ${index + 1}">删除</button>
+          </div>`;
+      }).join("");
+    }
+
+    count.textContent = ideas.length ? `当前 ${ideas.length} 个方向` : "当前 0 个方向 · 可以直接跳过";
+    submitButton.innerHTML = ideas.length
+      ? '提交并继续 <span aria-hidden="true">→</span>'
+      : '跳过并继续 <span aria-hidden="true">→</span>';
+
+    list.querySelectorAll(".expand-idea-input").forEach((input, index) => {
+      setupVoiceInput(input);
+      input.addEventListener("input", () => {
+        ideas[index] = input.value;
+      });
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+    });
+    list.querySelectorAll("[data-remove-direction]").forEach((button) => {
+      button.addEventListener("click", () => {
+        ideas.splice(Number(button.dataset.removeDirection), 1);
+        renderIdeaRows(Math.min(Number(button.dataset.removeDirection), ideas.length - 1));
+      });
+    });
+
+    if (focusIndex >= 0) {
+      window.setTimeout(() => list.querySelectorAll(".expand-idea-input")[focusIndex]?.focus({ preventScroll: true }), 30);
+    }
+  };
+
+  wireBackButton();
+  addButton.addEventListener("click", () => {
+    ideas.push("");
+    renderIdeaRows(ideas.length - 1);
+  });
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitExpandAnswer(ideas);
+  });
+  renderIdeaRows(ideas.length ? 0 : -1);
+}
+
 function collectIdeas() {
   const dimensions = [
     ["对象", state.answers.object],
@@ -621,7 +858,7 @@ function collectIdeas() {
   ];
   const ideas = [];
   dimensions.forEach(([dimension, value]) => {
-    meaningfulParts(value || "").forEach((text) => ideas.push({ dimension, text }));
+    directionParts(value).forEach((text) => ideas.push({ dimension, text }));
   });
 
   const seen = new Set();
@@ -630,7 +867,18 @@ function collectIdeas() {
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 12);
+  });
+}
+
+function candidateLetter(index) {
+  let value = index + 1;
+  let label = "";
+  while (value > 0) {
+    value -= 1;
+    label = String.fromCharCode(65 + (value % 26)) + label;
+    value = Math.floor(value / 26);
+  }
+  return label;
 }
 
 function renderCandidateSelection() {
@@ -640,18 +888,21 @@ function renderCandidateSelection() {
       <input type="checkbox" name="candidate" value="${index}" />
       <span class="choice-index">${index + 1}</span>
       <span class="choice-copy"><strong>${escapeHTML(idea.dimension)}维度</strong><p>${escapeHTML(idea.text)}</p></span>
-    </label>`).join("");
+    </label>`).join("") || '<div class="candidate-empty-state">方案池还是空的。请回到“扩”阶段新增方向。</div>';
 
   elements.interactionCard.innerHTML = `
     <form class="special-shell" id="candidateForm">
       <div class="special-header">
-        <h3>从方案池中选择 3 个候选方向</h3>
-        <p>选择来自不同维度的 3 个方向，下一步将在同一张表单中完成四则检验。</p>
+        <h3>从方案池中选择候选方向</h3>
+        <p>累计选择至少 ${MIN_CANDIDATES} 个方向，再生成四则检验表。</p>
       </div>
       <div class="special-body">${cards}</div>
       <div class="special-footer">
-        <span class="selection-count" id="selectionCount">已选择 0/3 个</span>
-        <button class="submit-button" id="candidateSubmit" type="submit" disabled>生成四则检验表 <span aria-hidden="true">→</span></button>
+        <span class="selection-count" id="selectionCount">已选择 0 个 · 至少 ${MIN_CANDIDATES} 个</span>
+        <div class="special-footer-actions">
+          ${backButtonMarkup()}
+          <button class="submit-button" id="candidateSubmit" type="submit" disabled>生成四则检验表 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
@@ -659,18 +910,16 @@ function renderCandidateSelection() {
   const count = document.querySelector("#selectionCount");
   const button = document.querySelector("#candidateSubmit");
   const inputs = [...form.querySelectorAll('input[name="candidate"]')];
+  wireBackButton();
 
   inputs.forEach((input) => {
     input.addEventListener("change", () => {
-      const selected = inputs.filter((item) => item.checked);
-      if (selected.length > 3) {
-        input.checked = false;
-        showToast("候选方向固定选择 3 个");
-      }
       const finalSelected = inputs.filter((item) => item.checked);
       inputs.forEach((item) => item.closest(".choice-card").classList.toggle("selected", item.checked));
-      const valid = finalSelected.length === 3;
-      count.textContent = valid ? "已选择 3/3 个 · 可以生成表单" : `已选择 ${finalSelected.length}/3 个`;
+      const valid = finalSelected.length >= MIN_CANDIDATES;
+      count.textContent = valid
+        ? `已选择 ${finalSelected.length} 个 · 可以生成表单`
+        : `已选择 ${finalSelected.length} 个 · 至少 ${MIN_CANDIDATES} 个`;
       count.classList.toggle("valid", valid);
       button.disabled = !valid;
     });
@@ -681,19 +930,20 @@ function renderCandidateSelection() {
     const selectedIdeas = inputs
       .filter((input) => input.checked)
       .map((input) => ideas[Number(input.value)]);
-    if (selectedIdeas.length !== 3) return;
+    if (selectedIdeas.length < MIN_CANDIDATES) return;
 
+    rememberCurrentQuestion();
     state.candidates = selectedIdeas.map((idea, index) => ({
-      id: String.fromCharCode(65 + index),
-      name: `方案${String.fromCharCode(65 + index)}`,
+      id: candidateLetter(index),
+      name: `方案${candidateLetter(index)}`,
       dimension: idea.dimension,
       text: idea.text,
     }));
     state.screening = Object.fromEntries(state.candidates.map((candidate) => [candidate.id, {}]));
     state.screeningCursor = { candidate: 0, criterion: 0 };
     addMessage("user", `我选择了 ${state.candidates.length} 个候选方向：\n${state.candidates.map((candidate) => `${candidate.name}：${candidate.text}`).join("\n")}`);
-    addMessage("coach", "3 个候选方向已经确定。请在四则收敛表中，通过下拉选项依次判断用户、痛点、资源和目标；全部选择后统一提交。");
     state.step = "screening";
+    addMessage("coach", `${state.candidates.length} 个候选方向已确定。请用下拉选项完成用户、痛点、资源和目标四则检验。`);
     commitAndRender();
   });
 }
@@ -745,8 +995,8 @@ function renderScreening() {
   elements.interactionCard.innerHTML = `
     <form class="special-shell screening-form" id="screeningForm">
       <div class="special-header">
-        <h3>3 个候选方向 · 四则收敛表</h3>
-        <p>参照 4·4·4 工具单，通过下拉选项直接完成横向比较。</p>
+        <h3>${state.candidates.length} 个候选方向 · 四则收敛表</h3>
+        <p>通过下拉选项完成横向比较。</p>
       </div>
       <div class="screening-table-wrap">
         <table class="screening-table">
@@ -768,8 +1018,11 @@ function renderScreening() {
         <span>目标＝是否有效推动核心目标实现</span>
       </div>
       <div class="special-footer">
-        <span class="selection-count" id="screeningCompletionCount">已选择 0/12 项</span>
-        <button class="submit-button" id="screeningSubmit" type="submit" disabled>提交四则检验 <span aria-hidden="true">→</span></button>
+        <span class="selection-count" id="screeningCompletionCount">已选择 0/${state.candidates.length * CRITERIA.length} 项</span>
+        <div class="special-footer-actions">
+          ${backButtonMarkup()}
+          <button class="submit-button" id="screeningSubmit" type="submit" disabled>提交四则检验 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
@@ -777,6 +1030,7 @@ function renderScreening() {
   const inputs = [...form.querySelectorAll(".screening-select")];
   const completionCount = document.querySelector("#screeningCompletionCount");
   const submitButton = document.querySelector("#screeningSubmit");
+  wireBackButton();
 
   const updateCompletion = () => {
     const completed = inputs.filter((input) => input.value).length;
@@ -827,18 +1081,22 @@ function renderDecision() {
     <form class="special-shell" id="decisionForm">
       <div class="special-header">
         <h3>哪个方案目前最值得行动？</h3>
-        <p>结合四则作出你的判断。这里没有脱离情境的绝对最优，也不采用简单总分。</p>
+        <p>结合四则判断，选择一个优先方案。</p>
       </div>
       <div class="special-body">
         ${options}
       </div>
       <div class="special-footer">
         <span class="selection-count">决定权在你手中</span>
-        <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
+        <div class="special-footer-actions">
+          ${backButtonMarkup()}
+          <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
   const form = document.querySelector("#decisionForm");
+  wireBackButton();
   form.querySelectorAll('input[name="priority"]').forEach((input) => {
     input.addEventListener("change", () => {
       form.querySelectorAll("[data-choice-card]").forEach((card) => {
@@ -854,10 +1112,11 @@ function renderDecision() {
       return;
     }
     const candidate = state.candidates.find((item) => item.id === selected.value);
+    rememberCurrentQuestion();
     state.decision = { candidateId: selected.value };
     addMessage("user", `我选择 ${candidate.name}：${candidate.text}`);
-    addMessage("coach", "选择来自你的比较与判断。四则收敛不是寻找绝对最优，而是筛出当前情境下更值得行动的方案。最后回看整个过程，思考哪一步改变了你的第一答案。\n" + TEXT_STEPS.reflection.question);
     state.step = "reflection";
+    addMessage("coach", `选择已记录。最后回看整个过程。\n${TEXT_STEPS.reflection.question}`);
     commitAndRender();
   });
 }
@@ -911,10 +1170,12 @@ function renderCompletion() {
       <h3>你完成了一次完整的创新思维训练</h3>
       <p>从重新表征，到发散生成，再到聚合决策。答案来自你的思考，成果单已经整理完成。</p>
       <div class="completion-actions">
+        ${backButtonMarkup()}
         <button class="secondary-button" id="completionReview" type="button">查看成果单</button>
         <button class="primary-button compact" id="completionExport" type="button">导出成果单</button>
       </div>
     </div>`;
+  wireBackButton();
   document.querySelector("#completionReview").addEventListener("click", openResultPanel);
   document.querySelector("#completionExport").addEventListener("click", exportResult);
   window.setTimeout(launchCelebration, 100);
@@ -923,15 +1184,16 @@ function renderCompletion() {
 function renderInteraction() {
   stopActiveRecognition();
   const step = TEXT_STEPS[state.step];
-  if (step) renderTextInteraction(step);
+  if (step && EXPAND_STEP_IDS.includes(state.step)) renderExpandInteraction(step);
+  else if (step) renderTextInteraction(step);
   else if (state.step === "candidate_select") renderCandidateSelection();
   else if (state.step === "screening") renderScreening();
   else if (state.step === "decision") renderDecision();
   else renderCompletion();
 }
 
-function resultField(label, value) {
-  return `<dl class="result-field"><dt>${escapeHTML(label)}</dt><dd class="${value ? "" : "empty"}">${escapeHTML(value || "等待你的回答……")}</dd></dl>`;
+function resultField(label, value, emptyText = "等待你的回答……") {
+  return `<dl class="result-field"><dt>${escapeHTML(label)}</dt><dd class="${value ? "" : "empty"}">${escapeHTML(value || emptyText)}</dd></dl>`;
 }
 
 function activeResultKey() {
@@ -966,6 +1228,12 @@ function renderResults() {
     return `<div class="candidate-mini"><strong>${escapeHTML(candidate.name)}</strong> · ${escapeHTML(candidate.text)}<br>${checkCount}/4 项检验已记录 · ${escapeHTML(conclusion.label)}</div>`;
   }).join("");
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
+  const expandField = (stepId, label) => resultField(
+    label,
+    state.answers[stepId],
+    state.completedSteps?.includes(stepId) ? "本维度未填写" : "等待你的回答……",
+  );
+  const expandDone = EXPAND_STEP_IDS.every((stepId) => state.completedSteps?.includes(stepId));
 
   elements.resultContent.innerHTML = [
     sectionMarkup("01", "problem", "原始问题", resultField("真实问题", state.answers.problem), Boolean(state.answers.problem)),
@@ -983,11 +1251,11 @@ function renderResults() {
       "03",
       "expand",
       "扩 · 四维发散",
-      resultField("对象", state.answers.object) +
-        resultField("时间", state.answers.time) +
-        resultField("空间", state.answers.space) +
-        resultField("流程", state.answers.process),
-      Boolean(state.answers.process),
+      expandField("object", "对象") +
+        expandField("time", "时间") +
+        expandField("space", "空间") +
+        expandField("process", "流程"),
+      expandDone,
     ),
     sectionMarkup(
       "04",
@@ -1042,16 +1310,16 @@ function noIdeaResponse(stepId) {
 
 function feedbackFor(stepId, raw) {
   const feedback = {
-    problem: "问题已经记录。先不评价解决方案，我们从可验证的事实开始拆解。",
-    facts: `你列出了 ${meaningfulParts(raw).length} 条信息。事实层已经更清楚，下一步区分哪些是必须面对的现实条件。`,
-    constraints: "现实条件已经显现。现在要警惕：有些“约束”可能只是过去的做法。接下来寻找默认假设。",
-    assumptions: "你已经开始松动原问题的边界。先不急着想方案，下一步用这些假设重构问题。",
-    reframe: "问题的搜索方向已经发生变化。第一阶“破”完成，接下来暂缓可行性判断，进入四维发散。",
-    object: "对象维度已打开。不要评价它好不好，继续改变方案发生的时点。",
-    time: "时间维度已记录。现在换一个空间视角，看看场景结构能否变化。",
-    space: "空间维度已打开。最后把整个过程拆开，从流程步骤寻找改变。",
-    process: "四个维度都已有方向。现在从不同类别中选择 3 个候选方案。",
-    reflection: "你的反思已经写入成果单。你完成了“重新表征 → 发散生成 → 聚合决策”的完整训练。",
+    problem: "问题已记录。接着看事实。",
+    facts: `已记录 ${meaningfulParts(raw).length} 条事实。接着看约束。`,
+    constraints: "约束已记录。接着找默认假设。",
+    assumptions: "假设已记录。接着重述问题。",
+    reframe: "新问题已记录。现在进入四维发散。",
+    object: raw ? "对象方向已记录。继续看时间。" : "对象维度已跳过。继续看时间。",
+    time: raw ? "时间方向已记录。继续看空间。" : "时间维度已跳过。继续看空间。",
+    space: raw ? "空间方向已记录。继续看流程。" : "空间维度已跳过。继续看流程。",
+    process: `四维发散完成。现在从方案池中至少选择 ${MIN_CANDIDATES} 个方向。`,
+    reflection: "反思已写入成果单。训练完成。",
   };
   return feedback[stepId] || "已记录。";
 }
@@ -1059,8 +1327,26 @@ function feedbackFor(stepId, raw) {
 function nextPrompt(stepId) {
   const next = TEXT_STEPS[stepId]?.next;
   if (TEXT_STEPS[next]) return TEXT_STEPS[next].question;
-  if (next === "candidate_select") return "请从刚才的四维方向中选择 3 个候选方案，尽量保持类型多样。";
+  if (next === "candidate_select") return `请从方案池中选择至少 ${MIN_CANDIDATES} 个候选方向。`;
   return "";
+}
+
+function markStepComplete(stepId) {
+  state.completedSteps ||= [];
+  if (!state.completedSteps.includes(stepId)) state.completedSteps.push(stepId);
+}
+
+function advanceTextStep(stepId, raw, userMessage = raw) {
+  rememberCurrentQuestion();
+  state.attempts[stepId] = 0;
+  state.answers[stepId] = raw;
+  markStepComplete(stepId);
+  addMessage("user", userMessage, "recorded");
+  const feedback = feedbackFor(stepId, raw);
+  const next = TEXT_STEPS[stepId].next;
+  state.step = next;
+  addMessage("coach", next === "complete" ? feedback : `${feedback}\n${nextPrompt(stepId)}`);
+  commitAndRender();
 }
 
 function submitTextAnswer(value) {
@@ -1071,9 +1357,8 @@ function submitTextAnswer(value) {
     return;
   }
 
-  addMessage("user", raw, "retry");
-
   if (NO_IDEA_PATTERN.test(raw)) {
+    addMessage("user", raw, "retry");
     addMessage("coach", noIdeaResponse(stepId));
     commitAndRender();
     return;
@@ -1081,19 +1366,22 @@ function submitTextAnswer(value) {
 
   const validation = validateText(stepId, raw);
   if (validation) {
+    addMessage("user", raw, "retry");
     addMessage("coach", validation);
     commitAndRender();
     return;
   }
 
-  state.attempts[stepId] = 0;
-  state.answers[stepId] = raw;
-  state.messages[state.messages.length - 1].status = "recorded";
-  const feedback = feedbackFor(stepId, raw);
-  const next = TEXT_STEPS[stepId].next;
-  state.step = next;
-  addMessage("coach", next === "complete" ? feedback : `${feedback}\n${nextPrompt(stepId)}`);
-  commitAndRender();
+  advanceTextStep(stepId, raw);
+}
+
+function submitExpandAnswer(values) {
+  const directions = values.map((value) => value.trim()).filter(Boolean);
+  const raw = directions.join("\n");
+  const userMessage = directions.length
+    ? directions.map((direction, index) => `${index + 1}. ${direction}`).join("\n")
+    : "本维度暂不填写";
+  advanceTextStep(state.step, raw, userMessage);
 }
 
 function submitScreeningForm(inputs) {
@@ -1112,9 +1400,10 @@ function submitScreeningForm(inputs) {
     state.screening[candidateId] ||= {};
     state.screening[candidateId][criterionId] = input.value;
   });
+  rememberCurrentQuestion();
   addMessage("user", `我已完成 ${state.candidates.length} 个候选方案的用户、痛点、资源和目标四则检验。`);
   state.step = "decision";
-  addMessage("coach", "3 个候选方案的四则检验已经全部记录。现在综合用户、痛点、资源和目标：你认为哪个方案目前最值得行动？请由你作出选择并说明依据。并不存在由系统宣布的“标准最佳方案”。");
+  addMessage("coach", `${state.candidates.length} 个候选方案的四则检验已记录。现在选择一个最值得行动的方案。`);
   commitAndRender();
 }
 
@@ -1136,6 +1425,8 @@ function render() {
 
 function markdownResult() {
   const value = (key) => state.answers[key] || "待完成";
+  const expandValue = (key) => state.answers[key]
+    || (state.completedSteps?.includes(key) ? "本维度未填写" : "待完成");
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
   const tableRows = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
@@ -1160,10 +1451,10 @@ ${value("problem")}
 
 ## 三、扩：四维发散
 
-- **对象：** ${value("object")}
-- **时间：** ${value("time")}
-- **空间：** ${value("space")}
-- **流程：** ${value("process")}
+- **对象：** ${expandValue("object")}
+- **时间：** ${expandValue("time")}
+- **空间：** ${expandValue("space")}
+- **流程：** ${expandValue("process")}
 
 ## 四、筛：四则收敛
 
@@ -1257,6 +1548,8 @@ function wordLabelTable(rows) {
 
 function wordDocumentXML() {
   const value = (key) => state.answers[key] || "待完成";
+  const expandValue = (key) => state.answers[key]
+    || (state.completedSteps?.includes(key) ? "本维度未填写" : "待完成");
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
   const screeningBlocks = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
@@ -1286,10 +1579,10 @@ function wordDocumentXML() {
     wordField("隐藏假设", value("assumptions")),
     wordField("重构后的问题", value("reframe")),
     wordParagraph(wordRun("三、扩：四维发散"), "Heading1"),
-    wordField("对象", value("object")),
-    wordField("时间", value("time")),
-    wordField("空间", value("space")),
-    wordField("流程", value("process")),
+    wordField("对象", expandValue("object")),
+    wordField("时间", expandValue("time")),
+    wordField("空间", expandValue("space")),
+    wordField("流程", expandValue("process")),
     wordParagraph(wordRun("四、筛：四则收敛"), "Heading1"),
     screeningBlocks,
     wordField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "待完成"),

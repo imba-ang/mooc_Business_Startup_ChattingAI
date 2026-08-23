@@ -627,6 +627,115 @@ a:focus-visible {
   padding: 7px 8px 7px 14px;
 }
 
+.expand-input-shell {
+  padding: 14px;
+}
+
+.expand-input-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 2px 12px;
+}
+
+.expand-input-heading .answer-label {
+  margin: 0;
+}
+
+.expand-input-heading p {
+  margin: 4px 0 0;
+  color: var(--ink-400);
+  font-size: 10px;
+}
+
+.add-direction-button {
+  flex: 0 0 auto;
+  min-height: 36px;
+}
+
+.expand-idea-list {
+  display: grid;
+  gap: 9px;
+  padding-bottom: 12px;
+}
+
+.expand-idea-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 11px;
+  background: #fbfdff;
+}
+
+.expand-idea-row > label {
+  color: var(--ink-500);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.expand-idea-input {
+  width: 100%;
+  min-height: 40px;
+  max-height: 96px;
+  resize: vertical;
+  padding: 9px 10px;
+  border: 1px solid #cbd9e9;
+  border-radius: 9px;
+  outline: none;
+  color: var(--ink-900);
+  background: white;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.expand-idea-input:focus {
+  border-color: #78aaf0;
+  box-shadow: 0 0 0 3px rgba(20, 103, 232, 0.08);
+}
+
+.expand-idea-input::placeholder {
+  color: #a3afc0;
+}
+
+.expand-idea-row .voice-button {
+  min-width: 40px;
+  padding-inline: 10px;
+}
+
+.remove-direction-button {
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  color: var(--ink-500);
+  background: white;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.remove-direction-button:hover {
+  border-color: #f1a3a9;
+  color: #bd3341;
+  background: #fff5f5;
+}
+
+.expand-empty-state,
+.candidate-empty-state {
+  padding: 22px 16px;
+  border: 1px dashed #b9cbe0;
+  border-radius: 11px;
+  color: var(--ink-500);
+  background: #f8fbff;
+  text-align: center;
+  font-size: 11px;
+}
+
 .answer-label {
   display: block;
   margin: 4px 3px 7px;
@@ -671,6 +780,10 @@ a:focus-visible {
 
 .form-actions .submit-button {
   margin-left: 0;
+}
+
+.step-back-button {
+  flex: 0 0 auto;
 }
 
 .voice-button {
@@ -884,6 +997,17 @@ a:focus-visible {
   padding: 13px 20px;
   border-top: 1px solid var(--line-soft);
   background: #fbfcfe;
+}
+
+.special-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.special-footer-actions .submit-button {
+  margin-left: 0;
 }
 
 .selection-count {
@@ -1497,6 +1621,7 @@ a:focus-visible {
 
   .form-actions {
     width: 100%;
+    gap: 6px;
   }
 
   .voice-button {
@@ -1514,6 +1639,62 @@ a:focus-visible {
   }
 
   .form-actions .submit-button {
+    flex: 1;
+  }
+
+  .step-back-button {
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+
+  .expand-input-heading {
+    align-items: flex-start;
+  }
+
+  .expand-input-heading p {
+    max-width: 190px;
+  }
+
+  .add-direction-button {
+    padding-inline: 10px;
+  }
+
+  .expand-idea-row {
+    grid-template-columns: minmax(0, 1fr) 40px 48px;
+  }
+
+  .expand-idea-row > label {
+    grid-column: 1 / -1;
+  }
+
+  .expand-idea-row .voice-button {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+  }
+
+  .expand-idea-row .voice-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .remove-direction-button {
+    padding: 0 8px;
+  }
+
+  .special-footer {
+    flex-wrap: wrap;
+  }
+
+  .special-footer-actions {
+    width: 100%;
+  }
+
+  .special-footer-actions .submit-button {
     flex: 1;
   }
 
