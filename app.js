@@ -15,35 +15,69 @@ const CRITERIA = [
     id: "user",
     name: "用户",
     mark: "人",
+    headerPrompt: "找准了吗？",
     question: "这个方案找准用户了吗？谁是最直接、最核心的受益者？",
     note: "判断谁真正受益，避免把用户说得过于宽泛。",
     feedback: "用户边界已记录。接下来继续检验问题是否真实、重要。",
+    options: ["通过", "待调整"],
+    positiveValue: "通过",
   },
   {
     id: "pain",
     name: "痛点",
     mark: "痛",
+    headerPrompt: "抓住了吗？",
     question: "这个方案抓住核心痛点了吗？它是真实、高频且重要的问题吗？",
     note: "痛点看现在：这个问题值不值得解决。",
     feedback: "痛点判断已记录。下一步看方案是否符合现实条件。",
+    options: ["通过", "待调整"],
+    positiveValue: "通过",
   },
   {
     id: "resource",
     name: "资源",
     mark: "资",
+    headerPrompt: "现实满足吗？",
     question: "结合时间、成本、人员和技术，这个方案当前做得到吗？",
     note: "若条件不足，可考虑缩小规模，或判断更适合现在还是以后。",
     feedback: "现实条件已记录。最后检验它能否推动核心目标。",
+    options: ["满足", "暂不满足"],
+    positiveValue: "满足",
   },
   {
     id: "goal",
     name: "目标",
     mark: "标",
+    headerPrompt: "推动了吗？",
     question: "方案实施后，什么变化能够证明它推动了本轮创新目标？",
     note: "目标看未来：它能否把问题改善到希望的状态。",
     feedback: "四则检验已完成。我们继续比较下一项候选方案。",
+    options: ["推动", "推动有限"],
+    positiveValue: "推动",
   },
 ];
+
+function isRecordedScreeningValue(criterion, value) {
+  const normalized = String(value || "").trim();
+  return criterion.options.includes(normalized) || normalized.length >= 6;
+}
+
+function screeningConclusion(checks = {}) {
+  const complete = CRITERIA.every((criterion) => isRecordedScreeningValue(criterion, checks[criterion.id]));
+  if (!complete) return { label: "待完成", tone: "pending" };
+
+  const usesLegacyText = CRITERIA.some(
+    (criterion) => !criterion.options.includes(String(checks[criterion.id] || "").trim()),
+  );
+  if (usesLegacyText) return { label: "已记录", tone: "recorded" };
+
+  const allPositive = CRITERIA.every(
+    (criterion) => checks[criterion.id] === criterion.positiveValue,
+  );
+  return allPositive
+    ? { label: "可优先考虑", tone: "positive" }
+    : { label: "需要调整", tone: "adjust" };
+}
 
 const TEXT_STEPS = {
   problem: {
@@ -337,7 +371,7 @@ function currentMeta() {
   if (state.step === "screening") {
     return {
       eyebrow: "第三阶 · 筛",
-      title: "集中完成三方案四则检验",
+      title: "用四则表格筛选三个方案",
       badge: "筛 · 3 × 4",
       progress: 78,
     };
@@ -416,13 +450,13 @@ function renderMessages() {
   }).join("");
 }
 
-function voiceInputButton(targetId, { compact = false, label = "使用语音输入" } = {}) {
+function voiceInputButton(targetId) {
   return `
     <button
-      class="voice-button ${compact ? "compact" : ""}"
+      class="voice-button"
       type="button"
       data-voice-target="${escapeHTML(targetId)}"
-      aria-label="${escapeHTML(label)}"
+      aria-label="使用语音输入"
       aria-pressed="false"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -661,88 +695,111 @@ function renderCandidateSelection() {
     state.screening = Object.fromEntries(state.candidates.map((candidate) => [candidate.id, {}]));
     state.screeningCursor = { candidate: 0, criterion: 0 };
     addMessage("user", `我选择了 ${state.candidates.length} 个候选方向：\n${state.candidates.map((candidate) => `${candidate.name}：${candidate.text}`).join("\n")}`);
-    addMessage("coach", "3 个候选方向已经确定。请在同一张表单中，分别用“用户、痛点、资源、目标”四则完成检验；全部填写后统一提交。");
+    addMessage("coach", "3 个候选方向已经确定。请在四则收敛表中，通过下拉选项依次判断用户、痛点、资源和目标；全部选择后统一提交。");
     state.step = "screening";
     commitAndRender();
   });
 }
 
 function renderScreening() {
-  const candidateSections = state.candidates.map((candidate) => {
+  const candidateRows = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
-    const fields = CRITERIA.map((criterion) => {
-      const inputId = `screening-${candidate.id}-${criterion.id}`;
+    const conclusion = screeningConclusion(checks);
+    const cells = CRITERIA.map((criterion) => {
+      const selectId = `screening-${candidate.id}-${criterion.id}`;
+      const selectedValue = criterion.options.includes(checks[criterion.id]) ? checks[criterion.id] : "";
+      const options = criterion.options.map((option) => (
+        `<option value="${escapeHTML(option)}" ${selectedValue === option ? "selected" : ""}>${escapeHTML(option)}</option>`
+      )).join("");
       return `
-        <div class="screening-field" data-screening-field>
-          <div class="screening-field-heading">
-            <label for="${inputId}">
-              <span class="criterion-mark small" aria-hidden="true">${escapeHTML(criterion.mark)}</span>
-              <span>${escapeHTML(criterion.name)}</span>
-            </label>
-            ${voiceInputButton(inputId, {
-              compact: true,
-              label: `使用语音输入：${candidate.name}${criterion.name}检验`,
-            })}
-          </div>
-          <p>${escapeHTML(criterion.question)}</p>
-          <textarea
-            class="answer-input screening-input"
-            id="${inputId}"
+        <td data-label="${escapeHTML(criterion.name)}">
+          <select
+            class="screening-select"
+            id="${selectId}"
             data-candidate-id="${escapeHTML(candidate.id)}"
             data-criterion-id="${escapeHTML(criterion.id)}"
-            maxlength="600"
-            placeholder="写下具体判断依据"
-            aria-describedby="${inputId}-note"
+            aria-label="${escapeHTML(`${candidate.name}${criterion.name}检验`)}"
             required
-          >${escapeHTML(checks[criterion.id] || "")}</textarea>
-          <small id="${inputId}-note">${escapeHTML(criterion.note)}</small>
-        </div>`;
+          >
+            <option value="">请选择</option>
+            ${options}
+          </select>
+        </td>`;
     }).join("");
 
     return `
-      <section class="screening-candidate-card" aria-labelledby="screening-${candidate.id}-title">
-        <div class="screening-candidate-header">
-          <span class="choice-index">${escapeHTML(candidate.id)}</span>
-          <div>
-            <h4 id="screening-${candidate.id}-title">${escapeHTML(candidate.name)} · ${escapeHTML(candidate.dimension)}维度</h4>
-            <p>${escapeHTML(candidate.text)}</p>
+      <tr data-candidate-row="${escapeHTML(candidate.id)}">
+        <th scope="row">
+          <div class="screening-candidate-summary">
+            <span class="choice-index">${escapeHTML(candidate.id)}</span>
+            <div>
+              <strong>${escapeHTML(candidate.name)} · ${escapeHTML(candidate.dimension)}维度</strong>
+              <p>${escapeHTML(candidate.text)}</p>
+            </div>
           </div>
-        </div>
-        <div class="screening-fields">${fields}</div>
-      </section>`;
+        </th>
+        ${cells}
+        <td class="screening-conclusion-cell" data-label="结论">
+          <span class="screening-conclusion ${escapeHTML(conclusion.tone)}" data-screening-conclusion="${escapeHTML(candidate.id)}">${escapeHTML(conclusion.label)}</span>
+        </td>
+      </tr>`;
   }).join("");
 
   elements.interactionCard.innerHTML = `
     <form class="special-shell screening-form" id="screeningForm">
       <div class="special-header">
-        <h3>3 个候选方向 · 四则集中检验</h3>
-        <p>依次完成每个方向的用户、痛点、资源和目标判断。每项至少填写 6 个字，系统会自动保存草稿。</p>
+        <h3>3 个候选方向 · 四则收敛表</h3>
+        <p>参照 4·4·4 工具单，通过下拉选项直接完成横向比较。</p>
       </div>
-      <div class="screening-matrix">${candidateSections}</div>
+      <div class="screening-table-wrap">
+        <table class="screening-table">
+          <thead>
+            <tr>
+              <th scope="col">候选方案</th>
+              ${CRITERIA.map((criterion) => `<th scope="col"><strong>${escapeHTML(criterion.name)}</strong><span>${escapeHTML(criterion.headerPrompt)}</span></th>`).join("")}
+              <th scope="col">结论</th>
+            </tr>
+          </thead>
+          <tbody>${candidateRows}</tbody>
+        </table>
+      </div>
+      <div class="screening-guide">
+        <strong>判断重点</strong>
+        <span>用户＝是否明确真正受益者</span>
+        <span>痛点＝是否真实、高频、重要</span>
+        <span>资源＝时间、成本、人员、技术等是否允许</span>
+        <span>目标＝是否有效推动核心目标实现</span>
+      </div>
       <div class="special-footer">
-        <span class="selection-count" id="screeningCompletionCount">已完成 0/12 项</span>
+        <span class="selection-count" id="screeningCompletionCount">已选择 0/12 项</span>
         <button class="submit-button" id="screeningSubmit" type="submit" disabled>提交四则检验 <span aria-hidden="true">→</span></button>
       </div>
     </form>`;
 
   const form = document.querySelector("#screeningForm");
-  const inputs = [...form.querySelectorAll(".screening-input")];
+  const inputs = [...form.querySelectorAll(".screening-select")];
   const completionCount = document.querySelector("#screeningCompletionCount");
   const submitButton = document.querySelector("#screeningSubmit");
 
   const updateCompletion = () => {
-    const completed = inputs.filter((input) => input.value.trim().length >= 6).length;
-    completionCount.textContent = `已完成 ${completed}/${inputs.length} 项`;
+    const completed = inputs.filter((input) => input.value).length;
+    completionCount.textContent = `已选择 ${completed}/${inputs.length} 项`;
     completionCount.classList.toggle("valid", completed === inputs.length);
     submitButton.disabled = completed !== inputs.length;
-    inputs.forEach((input) => {
-      input.closest("[data-screening-field]").classList.toggle("completed", input.value.trim().length >= 6);
+    state.candidates.forEach((candidate) => {
+      const row = form.querySelector(`[data-candidate-row="${candidate.id}"]`);
+      const rowInputs = inputs.filter((input) => input.dataset.candidateId === candidate.id);
+      const checks = Object.fromEntries(rowInputs.map((input) => [input.dataset.criterionId, input.value]));
+      const conclusion = screeningConclusion(checks);
+      const conclusionElement = row.querySelector("[data-screening-conclusion]");
+      conclusionElement.textContent = conclusion.label;
+      conclusionElement.className = `screening-conclusion ${conclusion.tone}`;
+      row.classList.toggle("completed", rowInputs.every((input) => input.value));
     });
   };
 
   inputs.forEach((input) => {
-    setupVoiceInput(input);
-    input.addEventListener("input", () => {
+    input.addEventListener("change", () => {
       const candidateId = input.dataset.candidateId;
       const criterionId = input.dataset.criterionId;
       state.screening[candidateId] ||= {};
@@ -876,9 +933,10 @@ function renderResults() {
   const screenedCandidates = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
     const checkCount = CRITERIA.filter(
-      (criterion) => String(checks[criterion.id] || "").trim().length >= 6,
+      (criterion) => isRecordedScreeningValue(criterion, checks[criterion.id]),
     ).length;
-    return `<div class="candidate-mini"><strong>${escapeHTML(candidate.name)}</strong> · ${escapeHTML(candidate.text)}<br>${checkCount}/4 项检验已记录</div>`;
+    const conclusion = screeningConclusion(checks);
+    return `<div class="candidate-mini"><strong>${escapeHTML(candidate.name)}</strong> · ${escapeHTML(candidate.text)}<br>${checkCount}/4 项检验已记录 · ${escapeHTML(conclusion.label)}</div>`;
   }).join("");
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
 
@@ -1013,11 +1071,11 @@ function submitTextAnswer(value) {
 }
 
 function submitScreeningForm(inputs) {
-  const firstInvalid = inputs.find((input) => input.value.trim().length < 6);
+  const firstInvalid = inputs.find((input) => !input.value);
   if (firstInvalid) {
     const candidate = state.candidates.find((item) => item.id === firstInvalid.dataset.candidateId);
     const criterion = CRITERIA.find((item) => item.id === firstInvalid.dataset.criterionId);
-    showToast(`请补充${candidate?.name || "候选方案"}的“${criterion?.name || "四则"}”判断`);
+    showToast(`请选择${candidate?.name || "候选方案"}的“${criterion?.name || "四则"}”判断`);
     firstInvalid.focus({ preventScroll: true });
     return;
   }
@@ -1026,7 +1084,7 @@ function submitScreeningForm(inputs) {
     const candidateId = input.dataset.candidateId;
     const criterionId = input.dataset.criterionId;
     state.screening[candidateId] ||= {};
-    state.screening[candidateId][criterionId] = input.value.trim();
+    state.screening[candidateId][criterionId] = input.value;
   });
   addMessage("user", `我已完成 ${state.candidates.length} 个候选方案的用户、痛点、资源和目标四则检验。`);
   state.step = "decision";
@@ -1056,8 +1114,8 @@ function markdownResult() {
   const tableRows = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
     const safe = (text) => String(text || "待完成").replaceAll("|", "｜").replaceAll("\n", " ");
-    return `| ${candidate.name}：${safe(candidate.text)} | ${safe(checks.user)} | ${safe(checks.pain)} | ${safe(checks.resource)} | ${safe(checks.goal)} |`;
-  }).join("\n") || "| 待形成 | 待完成 | 待完成 | 待完成 | 待完成 |";
+    return `| ${candidate.name}：${safe(candidate.text)} | ${safe(checks.user)} | ${safe(checks.pain)} | ${safe(checks.resource)} | ${safe(checks.goal)} | ${screeningConclusion(checks).label} |`;
+  }).join("\n") || "| 待形成 | 待完成 | 待完成 | 待完成 | 待完成 | 待完成 |";
 
   return `# 三阶创新思维迁移任务成果单
 
@@ -1083,8 +1141,8 @@ ${value("problem")}
 
 ## 四、筛：四则收敛
 
-| 候选方案 | 用户 | 痛点 | 资源 | 目标 |
-| --- | --- | --- | --- | --- |
+| 候选方案 | 用户 | 痛点 | 资源 | 目标 | 结论 |
+| --- | --- | --- | --- | --- | --- |
 ${tableRows}
 
 - **最终优先方案：** ${priority ? `${priority.name}：${priority.text}` : "待完成"}
@@ -1184,6 +1242,7 @@ function wordDocumentXML() {
         ["痛点", checks.pain || "待完成"],
         ["资源", checks.resource || "待完成"],
         ["目标", checks.goal || "待完成"],
+        ["结论", screeningConclusion(checks).label],
       ]),
     ].join("");
   }).join("") || [
