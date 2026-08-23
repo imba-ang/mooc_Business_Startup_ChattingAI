@@ -263,6 +263,16 @@ function loadState() {
         saved.messages.push({ role: "coach", text: TEXT_STEPS.reflection.question });
         migrated = true;
       }
+
+      // 兼容旧版允许选择 4—5 个候选方向的未完成筛选进度。
+      if (saved.step === "screening" && Array.isArray(saved.candidates) && saved.candidates.length > 3) {
+        saved.candidates = saved.candidates.slice(0, 3);
+        saved.screening = Object.fromEntries(
+          saved.candidates.map((candidate) => [candidate.id, saved.screening?.[candidate.id] || {}]),
+        );
+        saved.screeningCursor = { candidate: 0, criterion: 0 };
+        migrated = true;
+      }
       if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
       return saved;
     }
@@ -325,16 +335,11 @@ function currentMeta() {
   }
 
   if (state.step === "screening") {
-    const candidate = state.candidates[state.screeningCursor.candidate];
-    const criterion = CRITERIA[state.screeningCursor.criterion];
-    const total = state.candidates.length || 1;
-    const completed = state.screeningCursor.candidate * 4 + state.screeningCursor.criterion;
-    const progress = 70 + (completed / (total * 4)) * 15;
     return {
       eyebrow: "第三阶 · 筛",
-      title: `${candidate?.name || "候选方案"} · ${criterion?.name || "四则"}检验`,
-      badge: `筛 ${state.screeningCursor.candidate + 1}/${total} · ${state.screeningCursor.criterion + 1}/4`,
-      progress,
+      title: "集中完成三方案四则检验",
+      badge: "筛 · 3 × 4",
+      progress: 78,
     };
   }
 
@@ -411,13 +416,13 @@ function renderMessages() {
   }).join("");
 }
 
-function voiceInputButton(targetId) {
+function voiceInputButton(targetId, { compact = false, label = "使用语音输入" } = {}) {
   return `
     <button
-      class="voice-button"
+      class="voice-button ${compact ? "compact" : ""}"
       type="button"
       data-voice-target="${escapeHTML(targetId)}"
-      aria-label="使用语音输入"
+      aria-label="${escapeHTML(label)}"
       aria-pressed="false"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -609,13 +614,13 @@ function renderCandidateSelection() {
   elements.interactionCard.innerHTML = `
     <form class="special-shell" id="candidateForm">
       <div class="special-header">
-        <h3>从方案池中选择 3—5 个候选方向</h3>
-        <p>先检查变通性：候选方案最好来自不同维度，而不是同一路径的多个版本。</p>
+        <h3>从方案池中选择 3 个候选方向</h3>
+        <p>选择来自不同维度的 3 个方向，下一步将在同一张表单中完成四则检验。</p>
       </div>
       <div class="special-body">${cards}</div>
       <div class="special-footer">
-        <span class="selection-count" id="selectionCount">已选择 0 个 · 请选择 3—5 个</span>
-        <button class="submit-button" id="candidateSubmit" type="submit" disabled>进入四则收敛 <span aria-hidden="true">→</span></button>
+        <span class="selection-count" id="selectionCount">已选择 0/3 个</span>
+        <button class="submit-button" id="candidateSubmit" type="submit" disabled>生成四则检验表 <span aria-hidden="true">→</span></button>
       </div>
     </form>`;
 
@@ -627,14 +632,14 @@ function renderCandidateSelection() {
   inputs.forEach((input) => {
     input.addEventListener("change", () => {
       const selected = inputs.filter((item) => item.checked);
-      if (selected.length > 5) {
+      if (selected.length > 3) {
         input.checked = false;
-        showToast("候选方案最多选择 5 个");
+        showToast("候选方向固定选择 3 个");
       }
       const finalSelected = inputs.filter((item) => item.checked);
       inputs.forEach((item) => item.closest(".choice-card").classList.toggle("selected", item.checked));
-      const valid = finalSelected.length >= 3 && finalSelected.length <= 5;
-      count.textContent = valid ? `已选择 ${finalSelected.length} 个 · 可以继续` : `已选择 ${finalSelected.length} 个 · 请选择 3—5 个`;
+      const valid = finalSelected.length === 3;
+      count.textContent = valid ? "已选择 3/3 个 · 可以生成表单" : `已选择 ${finalSelected.length}/3 个`;
       count.classList.toggle("valid", valid);
       button.disabled = !valid;
     });
@@ -645,7 +650,7 @@ function renderCandidateSelection() {
     const selectedIdeas = inputs
       .filter((input) => input.checked)
       .map((input) => ideas[Number(input.value)]);
-    if (selectedIdeas.length < 3 || selectedIdeas.length > 5) return;
+    if (selectedIdeas.length !== 3) return;
 
     state.candidates = selectedIdeas.map((idea, index) => ({
       id: String.fromCharCode(65 + index),
@@ -656,60 +661,104 @@ function renderCandidateSelection() {
     state.screening = Object.fromEntries(state.candidates.map((candidate) => [candidate.id, {}]));
     state.screeningCursor = { candidate: 0, criterion: 0 };
     addMessage("user", `我选择了 ${state.candidates.length} 个候选方向：\n${state.candidates.map((candidate) => `${candidate.name}：${candidate.text}`).join("\n")}`);
-    addMessage("coach", "方案池已经形成。接下来不简单算总分，而是逐项用“用户、痛点、资源、目标”进行检验。先看方案A。\n" + getScreeningPrompt());
+    addMessage("coach", "3 个候选方向已经确定。请在同一张表单中，分别用“用户、痛点、资源、目标”四则完成检验；全部填写后统一提交。");
     state.step = "screening";
     commitAndRender();
   });
 }
 
-function getScreeningPrompt() {
-  const candidate = state.candidates[state.screeningCursor.candidate];
-  const criterion = CRITERIA[state.screeningCursor.criterion];
-  if (!candidate || !criterion) return "请继续完成四则检验。";
-  return `${candidate.name}：${candidate.text}\n${criterion.question}`;
-}
-
 function renderScreening() {
-  const candidate = state.candidates[state.screeningCursor.candidate];
-  const criterion = CRITERIA[state.screeningCursor.criterion];
-  elements.interactionCard.innerHTML = `
-    <form class="special-shell" id="screeningForm">
-      <div class="special-header">
-        <h3>${escapeHTML(candidate.name)} · ${escapeHTML(candidate.dimension)}维度</h3>
-        <p>${escapeHTML(candidate.text)}</p>
-      </div>
-      <div class="criterion-banner">
-        <span class="criterion-mark">${escapeHTML(criterion.mark)}</span>
-        <span><strong>${escapeHTML(criterion.name)}检验</strong><small>${escapeHTML(criterion.note)}</small></span>
-        <span class="criterion-progress">${state.screeningCursor.criterion + 1} / 4</span>
-      </div>
-      <div class="criterion-input-wrap">
-        <label class="answer-label" for="screeningInput">${escapeHTML(criterion.question)}</label>
-        <textarea class="answer-input" id="screeningInput" maxlength="600" placeholder="写下你的判断依据，而不是只回答“是”或“否”" required></textarea>
-      </div>
-      <div class="special-footer">
-        <span class="selection-count">候选 ${state.screeningCursor.candidate + 1}/${state.candidates.length} · 四则 ${state.screeningCursor.criterion + 1}/4</span>
-        <div class="form-actions">
-          ${voiceInputButton("screeningInput")}
-          <button class="submit-button" type="submit">记录判断 <span aria-hidden="true">→</span></button>
+  const candidateSections = state.candidates.map((candidate) => {
+    const checks = state.screening[candidate.id] || {};
+    const fields = CRITERIA.map((criterion) => {
+      const inputId = `screening-${candidate.id}-${criterion.id}`;
+      return `
+        <div class="screening-field" data-screening-field>
+          <div class="screening-field-heading">
+            <label for="${inputId}">
+              <span class="criterion-mark small" aria-hidden="true">${escapeHTML(criterion.mark)}</span>
+              <span>${escapeHTML(criterion.name)}</span>
+            </label>
+            ${voiceInputButton(inputId, {
+              compact: true,
+              label: `使用语音输入：${candidate.name}${criterion.name}检验`,
+            })}
+          </div>
+          <p>${escapeHTML(criterion.question)}</p>
+          <textarea
+            class="answer-input screening-input"
+            id="${inputId}"
+            data-candidate-id="${escapeHTML(candidate.id)}"
+            data-criterion-id="${escapeHTML(criterion.id)}"
+            maxlength="600"
+            placeholder="写下具体判断依据"
+            aria-describedby="${inputId}-note"
+            required
+          >${escapeHTML(checks[criterion.id] || "")}</textarea>
+          <small id="${inputId}-note">${escapeHTML(criterion.note)}</small>
+        </div>`;
+    }).join("");
+
+    return `
+      <section class="screening-candidate-card" aria-labelledby="screening-${candidate.id}-title">
+        <div class="screening-candidate-header">
+          <span class="choice-index">${escapeHTML(candidate.id)}</span>
+          <div>
+            <h4 id="screening-${candidate.id}-title">${escapeHTML(candidate.name)} · ${escapeHTML(candidate.dimension)}维度</h4>
+            <p>${escapeHTML(candidate.text)}</p>
+          </div>
         </div>
+        <div class="screening-fields">${fields}</div>
+      </section>`;
+  }).join("");
+
+  elements.interactionCard.innerHTML = `
+    <form class="special-shell screening-form" id="screeningForm">
+      <div class="special-header">
+        <h3>3 个候选方向 · 四则集中检验</h3>
+        <p>依次完成每个方向的用户、痛点、资源和目标判断。每项至少填写 6 个字，系统会自动保存草稿。</p>
+      </div>
+      <div class="screening-matrix">${candidateSections}</div>
+      <div class="special-footer">
+        <span class="selection-count" id="screeningCompletionCount">已完成 0/12 项</span>
+        <button class="submit-button" id="screeningSubmit" type="submit" disabled>提交四则检验 <span aria-hidden="true">→</span></button>
       </div>
     </form>`;
 
   const form = document.querySelector("#screeningForm");
-  const input = document.querySelector("#screeningInput");
-  setupVoiceInput(input);
+  const inputs = [...form.querySelectorAll(".screening-input")];
+  const completionCount = document.querySelector("#screeningCompletionCount");
+  const submitButton = document.querySelector("#screeningSubmit");
+
+  const updateCompletion = () => {
+    const completed = inputs.filter((input) => input.value.trim().length >= 6).length;
+    completionCount.textContent = `已完成 ${completed}/${inputs.length} 项`;
+    completionCount.classList.toggle("valid", completed === inputs.length);
+    submitButton.disabled = completed !== inputs.length;
+    inputs.forEach((input) => {
+      input.closest("[data-screening-field]").classList.toggle("completed", input.value.trim().length >= 6);
+    });
+  };
+
+  inputs.forEach((input) => {
+    setupVoiceInput(input);
+    input.addEventListener("input", () => {
+      const candidateId = input.dataset.candidateId;
+      const criterionId = input.dataset.criterionId;
+      state.screening[candidateId] ||= {};
+      state.screening[candidateId][criterionId] = input.value;
+      saveState();
+      updateCompletion();
+      renderResults();
+    });
+  });
+  updateCompletion();
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    submitScreening(input.value);
+    submitScreeningForm(inputs);
   });
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      form.requestSubmit();
-    }
-  });
-  window.setTimeout(() => input.focus({ preventScroll: true }), 60);
+  window.setTimeout(() => inputs[0]?.focus({ preventScroll: true }), 60);
 }
 
 function renderDecision() {
@@ -826,7 +875,9 @@ function sectionMarkup(number, key, title, fields, done) {
 function renderResults() {
   const screenedCandidates = state.candidates.map((candidate) => {
     const checks = state.screening[candidate.id] || {};
-    const checkCount = CRITERIA.filter((criterion) => checks[criterion.id]).length;
+    const checkCount = CRITERIA.filter(
+      (criterion) => String(checks[criterion.id] || "").trim().length >= 6,
+    ).length;
     return `<div class="candidate-mini"><strong>${escapeHTML(candidate.name)}</strong> · ${escapeHTML(candidate.text)}<br>${checkCount}/4 项检验已记录</div>`;
   }).join("");
   const priority = state.candidates.find((candidate) => candidate.id === state.decision.candidateId);
@@ -915,7 +966,7 @@ function feedbackFor(stepId, raw) {
     object: "对象维度已打开。不要评价它好不好，继续改变方案发生的时点。",
     time: "时间维度已记录。现在换一个空间视角，看看场景结构能否变化。",
     space: "空间维度已打开。最后把整个过程拆开，从流程步骤寻找改变。",
-    process: "四个维度都已有方向。现在检查方案是否来自不同类别，并形成 3—5 个候选方案。",
+    process: "四个维度都已有方向。现在从不同类别中选择 3 个候选方案。",
     reflection: "你的反思已经写入成果单。你完成了“重新表征 → 发散生成 → 聚合决策”的完整训练。",
   };
   return feedback[stepId] || "已记录。";
@@ -924,7 +975,7 @@ function feedbackFor(stepId, raw) {
 function nextPrompt(stepId) {
   const next = TEXT_STEPS[stepId]?.next;
   if (TEXT_STEPS[next]) return TEXT_STEPS[next].question;
-  if (next === "candidate_select") return "请从刚才的四维方向中选择 3—5 个候选方案，尽量保持类型多样。";
+  if (next === "candidate_select") return "请从刚才的四维方向中选择 3 个候选方案，尽量保持类型多样。";
   return "";
 }
 
@@ -961,32 +1012,25 @@ function submitTextAnswer(value) {
   commitAndRender();
 }
 
-function submitScreening(value) {
-  const raw = value.trim();
-  if (raw.length < 6) {
-    showToast("请写下具体判断依据，而不只回答“是”或“否”");
+function submitScreeningForm(inputs) {
+  const firstInvalid = inputs.find((input) => input.value.trim().length < 6);
+  if (firstInvalid) {
+    const candidate = state.candidates.find((item) => item.id === firstInvalid.dataset.candidateId);
+    const criterion = CRITERIA.find((item) => item.id === firstInvalid.dataset.criterionId);
+    showToast(`请补充${candidate?.name || "候选方案"}的“${criterion?.name || "四则"}”判断`);
+    firstInvalid.focus({ preventScroll: true });
     return;
   }
 
-  const candidate = state.candidates[state.screeningCursor.candidate];
-  const criterion = CRITERIA[state.screeningCursor.criterion];
-  state.screening[candidate.id][criterion.id] = raw;
-  addMessage("user", `【${candidate.name} · ${criterion.name}】${raw}`);
-
-  const lastCriterion = state.screeningCursor.criterion === CRITERIA.length - 1;
-  const lastCandidate = state.screeningCursor.candidate === state.candidates.length - 1;
-
-  if (!lastCriterion) {
-    state.screeningCursor.criterion += 1;
-    addMessage("coach", `${criterion.feedback}\n${getScreeningPrompt()}`);
-  } else if (!lastCandidate) {
-    state.screeningCursor.candidate += 1;
-    state.screeningCursor.criterion = 0;
-    addMessage("coach", `方案${candidate.id}的四则检验完成。先不下结论，继续看下一项候选。\n${getScreeningPrompt()}`);
-  } else {
-    state.step = "decision";
-    addMessage("coach", "所有候选方案都完成了四则检验。现在综合用户、痛点、资源和目标：你认为哪个方案目前最值得行动？请由你作出选择并说明依据。并不存在由系统宣布的“标准最佳方案”。");
-  }
+  inputs.forEach((input) => {
+    const candidateId = input.dataset.candidateId;
+    const criterionId = input.dataset.criterionId;
+    state.screening[candidateId] ||= {};
+    state.screening[candidateId][criterionId] = input.value.trim();
+  });
+  addMessage("user", `我已完成 ${state.candidates.length} 个候选方案的用户、痛点、资源和目标四则检验。`);
+  state.step = "decision";
+  addMessage("coach", "3 个候选方案的四则检验已经全部记录。现在综合用户、痛点、资源和目标：你认为哪个方案目前最值得行动？请由你作出选择并说明依据。并不存在由系统宣布的“标准最佳方案”。");
   commitAndRender();
 }
 
