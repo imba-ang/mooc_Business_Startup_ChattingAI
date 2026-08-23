@@ -202,6 +202,10 @@ const elements = {
 let state = loadState();
 let saveTimer;
 let toastTimer;
+let activeRecognition = null;
+let activeVoiceButton = null;
+
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 function createInitialState() {
   return {
@@ -407,6 +411,133 @@ function renderMessages() {
   }).join("");
 }
 
+function voiceInputButton(targetId) {
+  return `
+    <button
+      class="voice-button"
+      type="button"
+      data-voice-target="${escapeHTML(targetId)}"
+      aria-label="使用语音输入"
+      aria-pressed="false"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="8" y="3" width="8" height="12" rx="4"></rect>
+        <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7"></path>
+      </svg>
+      <span data-voice-label>语音输入</span>
+    </button>`;
+}
+
+function setVoiceButtonState(button, listening) {
+  if (!button) return;
+  button.classList.toggle("listening", listening);
+  button.setAttribute("aria-pressed", String(listening));
+  button.querySelector("[data-voice-label]").textContent = listening ? "停止识别" : "语音输入";
+}
+
+function stopActiveRecognition() {
+  if (!activeRecognition) return;
+  const recognition = activeRecognition;
+  activeRecognition = null;
+  setVoiceButtonState(activeVoiceButton, false);
+  activeVoiceButton = null;
+  try {
+    recognition.abort();
+  } catch {
+    // Recognition may already have ended.
+  }
+}
+
+function appendRecognizedText(existingText, recognizedText) {
+  const base = existingText.trimEnd();
+  const recognized = recognizedText.trim();
+  if (!base) return recognized;
+  if (!recognized) return base;
+  const separator = /[\s\n，。！？；：、]$/.test(base) ? "" : " ";
+  return `${base}${separator}${recognized}`;
+}
+
+function setupVoiceInput(input) {
+  const button = document.querySelector(`[data-voice-target="${input.id}"]`);
+  if (!button) return;
+
+  if (!SpeechRecognitionAPI) {
+    button.disabled = true;
+    button.title = "当前浏览器不支持语音识别，请使用最新版 Chrome、Edge 或 Safari";
+    button.querySelector("[data-voice-label]").textContent = "暂不支持";
+    return;
+  }
+
+  button.addEventListener("click", () => {
+    if (activeRecognition && activeVoiceButton === button) {
+      activeRecognition.stop();
+      return;
+    }
+
+    stopActiveRecognition();
+    document.querySelector("#welcomeAudio")?.pause();
+    window.speechSynthesis?.cancel();
+
+    const recognition = new SpeechRecognitionAPI();
+    const originalText = input.value;
+    let finalTranscript = "";
+    let reportedError = false;
+
+    recognition.lang = "zh-CN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.addEventListener("start", () => {
+      activeRecognition = recognition;
+      activeVoiceButton = button;
+      setVoiceButtonState(button, true);
+      showToast("正在识别语音，可再次点击麦克风停止");
+    });
+
+    recognition.addEventListener("result", (event) => {
+      let interimTranscript = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index][0]?.transcript || "";
+        if (event.results[index].isFinal) finalTranscript += transcript;
+        else interimTranscript += transcript;
+      }
+      input.value = appendRecognizedText(originalText, `${finalTranscript}${interimTranscript}`);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+
+    recognition.addEventListener("error", (event) => {
+      reportedError = true;
+      const messages = {
+        "not-allowed": "请在浏览器地址栏允许麦克风权限后重试",
+        "service-not-allowed": "浏览器未允许语音识别服务",
+        "audio-capture": "没有检测到可用麦克风",
+        "no-speech": "没有听到语音，请靠近麦克风后重试",
+        network: "语音识别网络连接失败，请稍后重试",
+      };
+      showToast(messages[event.error] || "语音识别失败，请重试");
+    });
+
+    recognition.addEventListener("end", () => {
+      if (activeRecognition !== recognition) return;
+      activeRecognition = null;
+      activeVoiceButton = null;
+      setVoiceButtonState(button, false);
+      if (!reportedError && finalTranscript.trim()) showToast("语音已写入输入框，请检查并修改后提交");
+      input.focus({ preventScroll: true });
+    });
+
+    try {
+      recognition.start();
+    } catch {
+      setVoiceButtonState(button, false);
+      showToast("语音识别暂时无法启动，请稍后重试");
+    }
+  });
+}
+
 function renderTextInteraction(step) {
   elements.interactionCard.innerHTML = `
     <form class="input-shell" id="answerForm">
@@ -422,12 +553,16 @@ function renderTextInteraction(step) {
       ></textarea>
       <div class="input-footer">
         <span class="input-hint" id="answerHint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> 提交 · ${escapeHTML(step.hint)}</span>
-        <button class="submit-button" id="submitAnswer" type="submit">提交并继续 <span aria-hidden="true">→</span></button>
+        <div class="form-actions">
+          ${voiceInputButton("answerInput")}
+          <button class="submit-button" id="submitAnswer" type="submit">提交并继续 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
   const form = document.querySelector("#answerForm");
   const input = document.querySelector("#answerInput");
+  setupVoiceInput(input);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     submitTextAnswer(input.value);
@@ -554,12 +689,16 @@ function renderScreening() {
       </div>
       <div class="special-footer">
         <span class="selection-count">候选 ${state.screeningCursor.candidate + 1}/${state.candidates.length} · 四则 ${state.screeningCursor.criterion + 1}/4</span>
-        <button class="submit-button" type="submit">记录判断 <span aria-hidden="true">→</span></button>
+        <div class="form-actions">
+          ${voiceInputButton("screeningInput")}
+          <button class="submit-button" type="submit">记录判断 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
   const form = document.querySelector("#screeningForm");
   const input = document.querySelector("#screeningInput");
+  setupVoiceInput(input);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     submitScreening(input.value);
@@ -596,11 +735,15 @@ function renderDecision() {
       </div>
       <div class="special-footer">
         <span class="selection-count">决定权在你手中</span>
-        <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
+        <div class="form-actions">
+          ${voiceInputButton("decisionReason")}
+          <button class="submit-button" type="submit">确认优先方案 <span aria-hidden="true">→</span></button>
+        </div>
       </div>
     </form>`;
 
   const form = document.querySelector("#decisionForm");
+  setupVoiceInput(document.querySelector("#decisionReason"));
   form.querySelectorAll('input[name="priority"]').forEach((input) => {
     input.addEventListener("change", () => {
       form.querySelectorAll("[data-choice-card]").forEach((card) => {
@@ -645,6 +788,7 @@ function renderCompletion() {
 }
 
 function renderInteraction() {
+  stopActiveRecognition();
   const step = TEXT_STEPS[state.step];
   if (step) renderTextInteraction(step);
   else if (state.step === "candidate_select") renderCandidateSelection();

@@ -662,6 +662,65 @@ a:focus-visible {
   border-top: 1px solid var(--line-soft);
 }
 
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.form-actions .submit-button {
+  margin-left: 0;
+}
+
+.voice-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #b9d2f4;
+  border-radius: 10px;
+  color: var(--blue-700);
+  background: var(--blue-50);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.voice-button:hover {
+  border-color: #78aaf0;
+  background: #e7f1ff;
+}
+
+.voice-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.voice-button.listening {
+  border-color: #f1a3a9;
+  color: #bd3341;
+  background: #fff1f2;
+  box-shadow: 0 0 0 4px rgba(225, 70, 84, 0.1);
+  animation: voice-pulse 1.4s ease-in-out infinite;
+}
+
+.voice-button:disabled {
+  border-color: var(--line);
+  color: var(--ink-400);
+  background: var(--canvas);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .input-hint {
   display: flex;
   align-items: center;
@@ -1163,6 +1222,12 @@ a:focus-visible {
   }
 }
 
+@keyframes voice-pulse {
+  50% {
+    box-shadow: 0 0 0 7px rgba(225, 70, 84, 0.05);
+  }
+}
+
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 222px minmax(0, 1fr);
@@ -1267,6 +1332,28 @@ a:focus-visible {
 
   .input-hint {
     display: none;
+  }
+
+  .form-actions {
+    width: 100%;
+  }
+
+  .voice-button {
+    flex: 0 0 40px;
+    padding: 0;
+  }
+
+  .voice-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .form-actions .submit-button {
+    flex: 1;
   }
 
   .choice-card {
