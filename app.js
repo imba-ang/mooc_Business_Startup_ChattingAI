@@ -1,5 +1,6 @@
 const STORAGE_KEY = "qisi-innovation-coach-v1";
 const SESSION_VERSION = 2;
+const WELCOME_GREETING = "Hi，我是你的 AI 创新陪练 Cheese。";
 
 const STAGES = [
   { id: "start", icon: "启", title: "陪练启动", subtitle: "明确真实问题" },
@@ -1260,6 +1261,122 @@ function resetSession() {
   showToast("已开始一轮新的训练");
 }
 
+let welcomePlaybackStatus = "idle";
+let welcomeVoiceTimer;
+
+function chooseFemaleVoice(voices) {
+  const femaleHint = /(ting[- ]?ting|meijia|mei[- ]?jia|sin[- ]?ji|xiaoxiao|xiaoyi|xiaomeng|huihui|yaoyao|hanhan|lili|female|女声|samantha|serena|victoria|karen|moira|susan|zira)/i;
+  const maleHint = /(male|男声|yunxi|yunyang|yunjian|kangkang|daniel|alex|thomas)/i;
+  const chineseVoices = voices.filter((voice) => /^zh(?:-|_)/i.test(voice.lang));
+
+  return chineseVoices.find((voice) => femaleHint.test(voice.name))
+    || chineseVoices.find((voice) => !maleHint.test(voice.name))
+    || voices.find((voice) => femaleHint.test(voice.name))
+    || chineseVoices[0]
+    || voices[0]
+    || null;
+}
+
+function removeWelcomeRetryListeners() {
+  document.removeEventListener("pointerdown", retryWelcomeGreeting, true);
+  document.removeEventListener("keydown", retryWelcomeGreeting, true);
+}
+
+function setWelcomePlaybackStatus(status, source = "recorded") {
+  welcomePlaybackStatus = status;
+  document.documentElement.dataset.welcomeSpeech = status;
+  document.documentElement.dataset.welcomeSource = source;
+}
+
+function speakWelcomeFallback(force = false) {
+  if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+    setWelcomePlaybackStatus("unsupported", "none");
+    return;
+  }
+  if (["playing", "played"].includes(welcomePlaybackStatus)) return;
+
+  const synthesis = window.speechSynthesis;
+  const voices = synthesis.getVoices();
+  if (!voices.length && !force) {
+    setWelcomePlaybackStatus("waiting", "synthesis");
+    const speakWhenReady = () => {
+      if (["pending", "playing", "played"].includes(welcomePlaybackStatus)) return;
+      welcomePlaybackStatus = "idle";
+      speakWelcomeFallback(true);
+    };
+    synthesis.addEventListener("voiceschanged", speakWhenReady, { once: true });
+    window.clearTimeout(welcomeVoiceTimer);
+    welcomeVoiceTimer = window.setTimeout(speakWhenReady, 700);
+    return;
+  }
+
+  synthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(WELCOME_GREETING);
+  const voice = chooseFemaleVoice(voices);
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice?.lang || "zh-CN";
+  utterance.rate = 0.94;
+  utterance.pitch = 1.08;
+  utterance.volume = 1;
+
+  setWelcomePlaybackStatus("pending", "synthesis");
+  document.documentElement.dataset.welcomeVoice = voice?.name || "default";
+  utterance.addEventListener("start", () => {
+    setWelcomePlaybackStatus("playing", "synthesis");
+    removeWelcomeRetryListeners();
+  });
+  utterance.addEventListener("end", () => {
+    setWelcomePlaybackStatus("played", "synthesis");
+    removeWelcomeRetryListeners();
+  });
+  utterance.addEventListener("error", () => {
+    setWelcomePlaybackStatus("blocked", "synthesis");
+  });
+  synthesis.speak(utterance);
+}
+
+function playWelcomeGreeting(force = false) {
+  if (["playing", "played"].includes(welcomePlaybackStatus)) return;
+  const audio = document.querySelector("#welcomeAudio");
+  if (!audio || audio.error) {
+    speakWelcomeFallback(force);
+    return;
+  }
+
+  setWelcomePlaybackStatus("pending", "recorded");
+  document.documentElement.dataset.welcomeVoice = "Tingting";
+  const playAttempt = audio.play();
+  playAttempt?.catch(() => {
+    if (["playing", "played"].includes(welcomePlaybackStatus)) return;
+    setWelcomePlaybackStatus("blocked", "recorded");
+    if (force) speakWelcomeFallback(true);
+    else showToast("浏览器已阻止自动播放，点击页面即可播放欢迎语");
+  });
+}
+
+function retryWelcomeGreeting() {
+  if (["playing", "played"].includes(welcomePlaybackStatus)) return;
+  window.clearTimeout(welcomeVoiceTimer);
+  welcomePlaybackStatus = "idle";
+  playWelcomeGreeting(true);
+}
+
+function scheduleWelcomeGreeting() {
+  const audio = document.querySelector("#welcomeAudio");
+  audio?.addEventListener("playing", () => {
+    setWelcomePlaybackStatus("playing", "recorded");
+    removeWelcomeRetryListeners();
+  });
+  audio?.addEventListener("ended", () => {
+    setWelcomePlaybackStatus("played", "recorded");
+    removeWelcomeRetryListeners();
+  });
+  audio?.addEventListener("error", () => speakWelcomeFallback(), { once: true });
+  document.addEventListener("pointerdown", retryWelcomeGreeting, { once: true, capture: true });
+  document.addEventListener("keydown", retryWelcomeGreeting, { once: true, capture: true });
+  playWelcomeGreeting();
+}
+
 document.querySelectorAll("[data-reset-session]").forEach((button) => {
   button.addEventListener("click", resetSession);
 });
@@ -1319,3 +1436,6 @@ render();
 window.requestAnimationFrame(() => {
   elements.chatScroll.scrollTop = elements.chatScroll.scrollHeight;
 });
+
+if (document.readyState === "complete") scheduleWelcomeGreeting();
+else window.addEventListener("load", scheduleWelcomeGreeting, { once: true });
