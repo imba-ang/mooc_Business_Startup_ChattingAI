@@ -22,7 +22,7 @@ const STAGES = [
   { id: "start", icon: "启", title: "陪练启动", subtitle: "明确真实问题" },
   { id: "break", icon: "破", title: "四问破题", subtitle: "重新表征问题" },
   { id: "expand", icon: "扩", title: "四维发散", subtitle: "打开方案空间" },
-  { id: "screen", icon: "筛", title: "四则收敛", subtitle: "形成创新决策" },
+  { id: "screen", icon: "筛", title: "四筛收敛", subtitle: "形成创新决策" },
   { id: "result", icon: "果", title: "成果整理", subtitle: "思维反思与导出" },
 ];
 
@@ -995,7 +995,7 @@ function renderScreening() {
   elements.interactionCard.innerHTML = `
     <form class="special-shell screening-form" id="screeningForm">
       <div class="special-header">
-        <h3>${state.candidates.length} 个候选方向 · 四则收敛表</h3>
+        <h3>${state.candidates.length} 个候选方向 · 四筛收敛表</h3>
         <p>通过下拉选项完成横向比较。</p>
       </div>
       <div class="screening-table-wrap">
@@ -1260,7 +1260,7 @@ function renderResults() {
     sectionMarkup(
       "04",
       "screen",
-      "筛 · 四则收敛",
+      "筛 · 四筛收敛",
       (screenedCandidates || resultField("候选方案", "")) +
         resultField("最终优先方案", priority ? `${priority.name}：${priority.text}` : ""),
       Boolean(state.decision.candidateId),
@@ -1456,7 +1456,7 @@ ${value("problem")}
 - **空间：** ${expandValue("space")}
 - **流程：** ${expandValue("process")}
 
-## 四、筛：四则收敛
+## 四、筛：四筛收敛
 
 | 候选方案 | 用户 | 痛点 | 资源 | 目标 | 结论 |
 | --- | --- | --- | --- | --- | --- |
@@ -1583,7 +1583,7 @@ function wordDocumentXML() {
     wordField("时间", expandValue("time")),
     wordField("空间", expandValue("space")),
     wordField("流程", expandValue("process")),
-    wordParagraph(wordRun("四、筛：四则收敛"), "Heading1"),
+    wordParagraph(wordRun("四、筛：四筛收敛"), "Heading1"),
     screeningBlocks,
     wordField("最终优先方案", priority ? `${priority.name}：${priority.text}` : "待完成"),
     wordParagraph(wordRun("五、思维反思"), "Heading1"),
