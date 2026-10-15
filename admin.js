@@ -52,18 +52,18 @@ const cases = [
     validation: "确认场地是否允许摆放和使用装备。天气取消时如何退款、正常磨损如何认定，都要在下单前说明。",
   },
   {
-    id: "repair-checklist", number: "03", category: "数字服务", icon: "digital", tone: "violet",
-    title: "家电维修明白单",
-    summary: "帮居民预约附近的正规维修门店。上门费、检测费和配件费分开写，确认后再开修，修完留下可查的服务单。",
-    tags: ["明码报价", "社区预约", "维修留单"],
-    background: "法治日报 2026 年 4 月调查了家电反复维修、收费不清等问题。对居民来说，找得到人、看得懂报价，比急着上门更重要。",
-    user: "家电过了保修期、又不知道找哪家门店的社区居民，尤其是不熟悉线上报修的老人。",
-    pain: "电话里没说上门费，到了家里才报价；修完又坏，手里没有清单，也找不到当时的师傅。",
-    solution: "先核对附近门店的地址和服务范围，用简单的预约表收集品牌、型号和故障现象。门店写明检测费、配件费和人工费，住户确认后开修；完工单保留项目、费用和售后联系方式。",
-    innovation: "把临时口头约定变成前后能对上的一张单。学生团队负责预约和记录，检修交给合作门店的专业人员。",
-    business: "向合作门店收取明确的预约管理服务费，费用事先说明。先算清每单协调时间，不用夸大故障或推销配件来增加收入。",
-    pilot: "先找两家门店，在一个小区试做 10 单。逐单核对最终收费是否与确认单一致，回访是否修好、售后能否联系上。",
-    validation: "先确认是否仍可走品牌官方售后。故障由专业维修人员判断，新增费用要再次确认；不承接需要额外资质的维修项目。",
+    id: "parcel-reuse", number: "03", category: "绿色创业", icon: "leaf", tone: "violet",
+    title: "社区快递包装回收",
+    summary: "和快递驿站合作，收集居民拆下的纸箱，按尺寸整理。完好的纸箱留给下一位寄件人，其余定时交给回收站。",
+    tags: ["纸箱复用", "定点回收", "驿站合作"],
+    background: "取完快递，纸箱往往直接丢掉；过几天要寄东西，又得重新买箱子。把回收点放在取件处，可以少跑一趟，也方便挑出还能用的包装。",
+    user: "经常收寄快递的社区居民，以及需要备纸箱、又没有太多空间堆放的快递驿站。",
+    pain: "居民家里放不下纸箱，零散卖掉也不值当。驿站愿意留下好箱子，但没有人固定整理，尺寸混在一起，忙起来顾不上挑。",
+    solution: "在一家驿站设置纸箱交还区，约好每天的整理时间。先去除面单，检查纸箱是否干净完好，再按尺寸上架；破损和多余的纸箱定时清走。",
+    innovation: "把收集、挑选和再次使用放在同一个地方。居民取件时就能交箱，寄件时也能现场选箱。",
+    business: "先和驿站谈可复用纸箱的结算方式，其余纸箱与回收站按重量结算。把分拣工时和搬运费用算进去，确认小规模也能覆盖成本。",
+    pilot: "先在一个驿站做两周，记录收到多少箱、多少能再次使用，以及每天整理多久。再问驿站是否愿意长期付费合作。",
+    validation: "先取得场地同意，安排好存放和清运时间，不占消防通道。及时清除面单信息，不收受潮、污染或装过危险物品的包装。",
   },
   {
     id: "silver-help", number: "04", category: "社区服务", icon: "community", tone: "orange",
@@ -233,11 +233,11 @@ document.querySelector("#caseGrid").addEventListener("click", (event) => {
   if (!item) return;
   const fields = [["谁会用", item.user], ["卡在哪里", item.pain], ["具体怎么做", item.solution], ["换个做法", item.innovation], ["谁来付钱", item.business], ["先试一小步", item.pilot], ["要想清楚的事", item.validation]];
   document.querySelector("#caseDetailContent").innerHTML = `
-    <span class="detail-category ${item.tone}">${item.category} · 热点问题改编</span><h2 id="caseDetailTitle">${item.title}</h2>
+    <span class="detail-category ${item.tone}">${item.category}</span><h2 id="caseDetailTitle">${item.title}</h2>
     <div class="detail-highlight">${item.summary}</div>
     <section class="case-background" aria-label="问题背景"><h3>问题背景</h3><p>${item.background}</p></section>
     <dl class="detail-fields">${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
-    <p class="detail-note">报道提供问题背景，以上做法是据此设计的教学方案，尚未开展经营验证。</p>`;
+    <p class="detail-note">以上为教学方案，尚未开展经营验证。</p>`;
   caseDialog.showModal();
   caseDialog.scrollTop = 0;
 });
