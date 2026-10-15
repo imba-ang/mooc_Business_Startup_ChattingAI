@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1467e8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>教学管理中心 · 启思 AI 创新陪练</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./admin.css?v=20261015.1" />
+  </head>
+  <body>
+    <a class="skip-link" href="#adminMain" id="adminSkipLink" hidden>跳到后台内容</a>
+    <main class="login-layout" id="loginView">
+      <section class="login-story" aria-label="启思教学管理介绍">
+        <a class="brand light-brand" href="./index.html"><span class="brand-icon" aria-hidden="true">启</span><span>启思<small>AI 创新陪练</small></span></a>
+        <div class="login-story-copy">
+          <span class="eyebrow">QISI · TEACHING STUDIO</span>
+          <h1>让每一次思考，<br />都有迹可循。</h1>
+          <p>看见训练成果，发现创新亮点。<br />为课堂里的好想法，找到下一步。</p>
+          <div class="thinking-path" aria-label="破、扩、筛三阶训练"><span>破<small>重新表征</small></span><i aria-hidden="true">→</i><span>扩<small>发散生成</small></span><i aria-hidden="true">→</i><span>筛<small>聚合决策</small></span></div>
+        </div>
+        <div class="story-footer"><span class="status-dot"></span> 创新创业课程 · 教学展示平台</div>
+        <div class="story-orbit" aria-hidden="true"></div>
+      </section>
+      <section class="login-form-panel">
+        <a class="back-link" href="./index.html">← 返回陪练页面</a>
+        <div class="login-card">
+          <span class="login-lock" data-icon="lock" aria-hidden="true"></span>
+          <span class="eyebrow">TEACHER ACCESS</span>
+          <h2>欢迎进入教学管理中心</h2>
+          <p class="muted">输入管理员密码，查看训练概览与优秀案例。</p>
+          <form id="loginForm">
+            <label for="adminPassword">管理员密码</label>
+            <div class="password-field">
+              <input id="adminPassword" name="password" type="password" autocomplete="current-password" required aria-describedby="loginError" />
+              <button id="passwordToggle" type="button" aria-label="显示密码" aria-pressed="false">显示</button>
+            </div>
+            <p class="form-error" id="loginError" role="alert"></p>
+            <button class="button primary login-submit" id="loginSubmit" type="submit">进入管理后台 <span aria-hidden="true">→</span></button>
+          </form>
+          <div class="login-caption"><span data-icon="shield" aria-hidden="true"></span> 专为教学展示设计的管理空间</div>
+        </div>
+        <p class="login-footnote">启思 · 破—扩—筛三阶创新思维训练</p>
+      </section>
+    </main>
+
+    <div class="admin-layout" id="dashboardView" hidden>
+      <aside class="admin-sidebar" aria-label="后台导航">
+        <a class="brand" href="./index.html"><span class="brand-icon" aria-hidden="true">启</span><span>启思<small>AI 创新陪练</small></span></a>
+        <div class="workspace-label">教师工作空间</div>
+        <nav class="admin-nav">
+          <a class="nav-link active" href="#overview" aria-current="page"><span data-icon="grid" aria-hidden="true"></span>教学概览</a>
+          <a class="nav-link" href="#cases"><span data-icon="book" aria-hidden="true"></span>优秀案例集锦<span class="nav-count">6</span></a>
+        </nav>
+        <div class="sidebar-course"><span class="eyebrow">本课程训练方法</span><strong>破 · 扩 · 筛</strong><p>从重新看见问题<br />到形成可行动的方案</p><div class="course-line"><span></span><span></span><span></span></div></div>
+        <div class="sidebar-bottom"><span class="demo-label"><span class="status-dot"></span> 教学展示版</span><a class="nav-link" href="./index.html"><span data-icon="arrow" aria-hidden="true"></span>返回陪练页面</a></div>
+      </aside>
+      <div class="admin-body">
+        <header class="admin-topbar">
+          <div class="breadcrumb">启思工作台 <span>/</span> <strong>教学管理中心</strong></div>
+          <div class="topbar-tools"><span class="teacher-avatar" aria-hidden="true">师</span><span class="teacher-name">课程管理员</span><button class="logout-button" id="logoutButton" type="button"><span data-icon="logout" aria-hidden="true"></span>退出登录</button></div>
+        </header>
+        <main class="dashboard-content" id="adminMain" tabindex="-1">
+          <section id="overview" class="overview-section" aria-labelledby="overviewTitle">
+            <div class="section-heading"><div><span class="eyebrow">LEARNING INSIGHTS</span><h1 id="overviewTitle">教学概览</h1><p>看见学生的思考过程，也看见好创意的生长。</p></div><span class="data-badge"><span class="status-dot"></span> 静态展示数据</span></div>
+            <div class="welcome-banner">
+              <div class="welcome-copy"><span class="banner-label">每一个好想法，都值得被看见</span><h2>从课堂思考，走向创新实践。</h2><p>在“破—扩—筛”的训练中，帮助学生找到真实问题，<br class="desktop-break" />打开方案空间，形成自己的创新判断。</p><a class="button white-button" href="#cases">探索优秀案例 <span aria-hidden="true">↗</span></a></div>
+              <div class="banner-art" aria-hidden="true"><div class="art-ring ring-one"></div><div class="art-ring ring-two"></div><div class="art-card art-card-back"><span>扩</span><i></i><i></i></div><div class="art-card art-card-front"><span class="art-tick">✓</span><strong>好想法，向前一步</strong><div class="art-progress"><span></span></div><small>THINK · CREATE · ACT</small></div><span class="art-star star-one">✦</span><span class="art-star star-two">✧</span></div>
+            </div>
+            <div class="stats-grid">
+              <article class="stat-card"><div class="stat-top"><span>已完成人数</span><span class="stat-icon blue-icon" data-icon="users" aria-hidden="true"></span></div><p class="stat-number">381<span>人</span></p><p class="stat-description">已完成三阶创新思维训练</p><div class="stat-footer"><span class="small-dot blue-dot"></span> 从问题出发，到形成方案</div></article>
+              <article class="stat-card"><div class="stat-top"><span>训练完成率</span><span class="stat-icon green-icon" data-icon="chart" aria-hidden="true"></span></div><p class="stat-number">78<span>%</span></p><div class="completion-track" role="meter" aria-label="训练完成率" aria-valuemin="0" aria-valuemax="100" aria-valuenow="78"><span></span></div><div class="stat-footer"><span class="small-dot green-dot"></span> 完成完整训练流程的比例</div></article>
+              <article class="stat-card case-stat"><div class="stat-top"><span>优秀案例集锦</span><span class="stat-icon violet-icon" data-icon="spark" aria-hidden="true"></span></div><p class="stat-number">06<span>个示例</span></p><p class="stat-description">覆盖校园、绿色、数字与社区服务</p><a class="stat-footer stat-case-link" href="#cases">查看方案亮点 <span aria-hidden="true">→</span></a></article>
+            </div>
+            <div class="insights-grid">
+              <article class="panel completion-panel"><div class="panel-heading"><h2>训练完成情况</h2><span class="subtle-label">展示口径</span></div><div class="completion-summary"><div class="completion-ring" role="img" aria-label="已完成 78%，未完成 22%"><div><strong>78<small>%</small></strong><span>训练完成率</span></div></div><div class="completion-legend"><div><span class="small-dot blue-dot"></span><span>已完成训练</span><strong>78%</strong></div><div><span class="small-dot gray-dot"></span><span>尚未完成</span><strong>22%</strong></div><p>统计值按课程展示数据呈现。</p></div></div></article>
+              <article class="panel method-panel"><div class="panel-heading"><h2>三阶训练 · 思维路径</h2><span class="subtle-label">教学关注点</span></div><ol class="method-list"><li><span class="method-badge">破</span><div><strong>四问破题</strong><p>厘清事实、约束与假设，重新定义问题。</p></div><span class="method-arrow" aria-hidden="true">↗</span></li><li><span class="method-badge">扩</span><div><strong>四维发散</strong><p>从对象、时间、空间、流程打开思路。</p></div><span class="method-arrow" aria-hidden="true">↗</span></li><li><span class="method-badge">筛</span><div><strong>四筛收敛</strong><p>检验用户、痛点、资源与目标，形成决策。</p></div><span class="method-arrow" aria-hidden="true">↗</span></li></ol></article>
+            </div>
+          </section>
+          <section class="case-section" id="cases" aria-labelledby="casesTitle">
+            <div class="section-heading"><div><span class="eyebrow">IDEAS WORTH EXPLORING</span><h2 id="casesTitle">优秀案例集锦</h2><p>六个创业方案示例，为课堂讨论提供新的视角。</p></div><span class="example-badge">教学示例 · 非学生真实作品</span></div>
+            <div class="case-toolbar"><div class="case-filters" role="group" aria-label="案例分类"><button class="filter-chip active" type="button" data-filter="全部" aria-pressed="true">全部案例</button><button class="filter-chip" type="button" data-filter="校园服务" aria-pressed="false">校园服务</button><button class="filter-chip" type="button" data-filter="绿色创业" aria-pressed="false">绿色创业</button><button class="filter-chip" type="button" data-filter="数字服务" aria-pressed="false">数字服务</button><button class="filter-chip" type="button" data-filter="社区服务" aria-pressed="false">社区服务</button></div><span class="case-count" id="caseCount" role="status"></span></div>
+            <div class="case-grid" id="caseGrid"></div>
+          </section>
+          <footer class="dashboard-footer"><span>启思 · AI 创新陪练</span><p>本页为静态教学展示：381 人、78% 为预设统计；案例为生成的示例方案。</p></footer>
+        </main>
+      </div>
+    </div>
+    <dialog class="case-dialog" id="caseDialog" aria-labelledby="caseDetailTitle"><div class="dialog-topline"><span class="eyebrow">INNOVATION CASE STUDY</span><button class="dialog-close" id="dialogClose" type="button" aria-label="关闭案例详情">×</button></div><div id="caseDetailContent"></div></dialog>
+    <noscript><p class="noscript-note">请启用 JavaScript 后使用管理员登录功能。<a href="./index.html">返回陪练页面</a></p></noscript>
+    <script type="module" src="./admin.js?v=20261015.1"></script>
+  </body>
+</html>

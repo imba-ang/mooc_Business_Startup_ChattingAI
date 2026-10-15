@@ -261,6 +261,7 @@ a:focus-visible {
   border-radius: 9px;
   color: var(--ink-500);
   background: transparent;
+  text-decoration: none;
   cursor: pointer;
 }
 
