@@ -25,11 +25,10 @@ function icon(name) {
 const cases = [
   {
     id: "campus-loop", number: "01", category: "校园服务", icon: "campus", tone: "blue",
-    title: "毕业季旧物代卖", subtitle: "人要离校了，书和台灯还没卖出去。",
+    title: "毕业季旧物代卖",
     summary: "为毕业生集中拍照、登记成色和约定取货时间。先做教材、收纳盒等容易验货的物品，成交后结算。",
     tags: ["毕业季", "集中交付", "成交收费"],
     background: "苏州城市学院在 2026 年毕业季设置了旧物摆摊、公益回收和物品申领区域。旧物有去处，但赶着离校的人未必有时间摆摊。",
-    source: { publisher: "苏州城市学院", date: "2026-06-22", title: "2026 毕业季跳蚤市场暨绿色循环市集", url: "https://www.szcu.edu.cn/2026/0622/c187a91053/page.htm" },
     user: "临近离校、没时间逐个回复买家的毕业生。买家主要是同校低年级学生。",
     pain: "几十元的东西，反复拍照、议价、等人取货，很容易觉得不值得。最后一天还没卖掉，只能丢弃或低价处理。",
     solution: "先和一栋宿舍约定收件时段，给物品编号，拍清瑕疵和尺寸。买家在固定时间验货取走，卖家收到结算单；未卖出的物品按约定退回或捐赠。",
@@ -40,11 +39,10 @@ const cases = [
   },
   {
     id: "green-return", number: "02", category: "绿色创业", icon: "leaf", tone: "green",
-    title: "周末装备租借", subtitle: "一年用不了几次，先租一套试试。",
+    title: "周末装备租借",
     summary: "从露营桌椅和野餐垫做起，提供周五取、周日还的租借套餐。新手拿到装备时，也能看懂怎么用。",
     tags: ["以租代买", "周末出行", "清洁验收"],
     background: "新华社 2026 年 8 月报道了露营装备、相机等短期租赁消费。偶尔使用一次的物品，未必需要整套买回家。",
-    source: { publisher: "新华社", date: "2026-08-14", title: "解锁循环消费新体验", url: "https://www.news.cn/20260814/c8990bf88b0d49d8bd4a8febf6ab678a/c.html" },
     user: "偶尔周末郊游、又没有地方存放装备的学生和年轻家庭。",
     pain: "第一次出去玩，不知道要买哪些。买齐以后占地方；临时向朋友借，又怕损坏后不好开口。",
     solution: "先备几套耐用的桌椅和野餐垫，按人数打包。交接时一起拍照验收，附上使用说明和归还清单，回来后统一清洁。",
@@ -54,27 +52,25 @@ const cases = [
     validation: "确认场地是否允许摆放和使用装备。天气取消时如何退款、正常磨损如何认定，都要在下单前说明。",
   },
   {
-    id: "skill-bridge", number: "03", category: "数字服务", icon: "digital", tone: "violet",
-    title: "学生接单小组", subtitle: "第一单先做好，作品集才有东西可放。",
-    summary: "先接社团海报、活动剪辑这类边界清楚的小单。学生按自己的技能认领，交付前有人检查，改几次提前说好。",
-    tags: ["技能接单", "作品积累", "明确交付"],
-    background: "中国青年报 2026 年 4 月采访了靠插画等兴趣技能接单的年轻人，报道也提到持续经营需要积累作品和口碑。",
-    source: { publisher: "中国青年报 · 新华网", date: "2026-04-14", title: "这些年轻人用兴趣爱好解锁择业新可能", url: "https://education.news.cn/20260414/73ad3f21ffec432a8558a9355b000cc3/c.html" },
-    user: "会设计、剪辑或插画但还没有客户的学生，以及有小额制作需求的社团和周边店铺。",
-    pain: "学生不知道去哪接第一单，客户也说不清想要什么。一句“再改一下”，常常变成无休止返工。",
-    solution: "先只接三类活：一张活动海报、一条短视频、一套头像。报价单写清尺寸、时长、交稿日期和修改次数，接单前看参考图，交稿前由另一名同学检查。",
-    innovation: "缩小每单的工作范围，用能看得见的样稿确认需求。完成的项目经客户同意后，放进学生自己的作品集。",
-    business: "按单报价，分别列出制作费和协调费。先算上沟通与修改时间，再决定报价是否划算。",
-    pilot: "从熟悉的社团接 5 单。每单记录耗时和返工原因，做完后直接问客户愿不愿意再次付费。",
-    validation: "确认素材授权与成品版权；客户没有同意的照片和资料不能拿去做宣传。拒接代写作业和虚假评价。",
+    id: "repair-checklist", number: "03", category: "数字服务", icon: "digital", tone: "violet",
+    title: "家电维修明白单",
+    summary: "帮居民预约附近的正规维修门店。上门费、检测费和配件费分开写，确认后再开修，修完留下可查的服务单。",
+    tags: ["明码报价", "社区预约", "维修留单"],
+    background: "法治日报 2026 年 4 月调查了家电反复维修、收费不清等问题。对居民来说，找得到人、看得懂报价，比急着上门更重要。",
+    user: "家电过了保修期、又不知道找哪家门店的社区居民，尤其是不熟悉线上报修的老人。",
+    pain: "电话里没说上门费，到了家里才报价；修完又坏，手里没有清单，也找不到当时的师傅。",
+    solution: "先核对附近门店的地址和服务范围，用简单的预约表收集品牌、型号和故障现象。门店写明检测费、配件费和人工费，住户确认后开修；完工单保留项目、费用和售后联系方式。",
+    innovation: "把临时口头约定变成前后能对上的一张单。学生团队负责预约和记录，检修交给合作门店的专业人员。",
+    business: "向合作门店收取明确的预约管理服务费，费用事先说明。先算清每单协调时间，不用夸大故障或推销配件来增加收入。",
+    pilot: "先找两家门店，在一个小区试做 10 单。逐单核对最终收费是否与确认单一致，回访是否修好、售后能否联系上。",
+    validation: "先确认是否仍可走品牌官方售后。故障由专业维修人员判断，新增费用要再次确认；不承接需要额外资质的维修项目。",
   },
   {
     id: "silver-help", number: "04", category: "社区服务", icon: "community", tone: "orange",
-    title: "社区预约陪诊", subtitle: "子女请不了假，老人也得按时复诊。",
+    title: "社区预约陪诊",
     summary: "和已有服务团队合作，从一家医院的复诊陪同做起：出门前核对材料，到院后协助找诊室，结束后把资料交回家属。",
     tags: ["老人复诊", "预约陪同", "家属沟通"],
     background: "人民日报 2026 年 9 月报道了陪诊服务需求，也记录了医院流程复杂、服务质量不一等问题。熟悉流程和明确责任同样重要。",
-    source: { publisher: "人民日报", date: "2026-09-04", title: "陪诊师成为就业新选择", url: "https://paper.people.com.cn/rmrb/pc/content/202609/04/content_30178989.html" },
     user: "需要定期复诊、家属又难以全程陪同的老人。付款和沟通对象通常还包括子女。",
     pain: "找诊室、签到、取报告，一次看病要跑好几个地方。子女不在现场，最担心的是不知道老人进行到哪一步。",
     solution: "先与经过培训的陪诊团队合作，限定一家医院和预约时段。出发前列好材料清单，关键节点给家属报平安，结束后清点票据和报告。",
@@ -85,11 +81,10 @@ const cases = [
   },
   {
     id: "holiday-pets", number: "05", category: "社区服务", icon: "community", tone: "teal",
-    title: "假期上门喂猫", subtitle: "出门几天，谁来添粮、换水、铲猫砂？",
+    title: "假期上门喂猫",
     summary: "只接同一片社区的订单，上门前见面熟悉宠物。每次照看按清单完成，关门离开前再核对一遍。",
     tags: ["假期托管", "固定片区", "服务留痕"],
     background: "2026 年国庆期间，中国之声报道了上门喂养的需求，也调查了漏做服务、宠物走失和责任约定不清的纠纷。",
-    source: { publisher: "中国之声 · 京报网", date: "2026-10-03", title: "国庆出游，把猫狗交给陌生人上门喂养？这些“坑”一定要知道", url: "https://news.bjd.com.cn/2026/10/03/11982465.shtml" },
     user: "假期回家或出游、希望猫留在熟悉环境里的养宠人。服务先限定在步行可达的几个小区。",
     pain: "把钥匙交给陌生人很难放心。只收到一张照片，也看不出水换没换、猫砂清没清、窗户关没关。",
     solution: "第一次先上门熟悉，确认喂食量、藏身点和门窗要求。每次用同一张清单核对粮、水、猫砂和精神状态，再把约定的视频发给主人。",
@@ -100,11 +95,10 @@ const cases = [
   },
   {
     id: "local-notes", number: "06", category: "数字服务", icon: "digital", tone: "rose",
-    title: "小店实拍服务", subtitle: "照片里的东西，得和买到的一样。",
+    title: "小店实拍服务",
     summary: "为周边小店拍真实商品和使用细节，保留原片、尺寸与拍摄日期。一套照片拆成商品页和短视频，两处都能用。",
     tags: ["商品实拍", "原片留存", "按包交付"],
     background: "央视网 2026 年 5 月报道了 AI 生成的虚假“实拍图”和“买家秀”。对愿意如实展示商品的小店来说，拍得清楚也有价值。",
-    source: { publisher: "央视网", date: "2026-05-10", title: "AI 造假“实拍图”“买家秀”潜入电商平台", url: "https://tv.cctv.com/2026/05/10/VIDESntrV6nfGWIuiHqK4HHS260510.shtml" },
     user: "没有专职摄影师、需要更新网店图片的周边小店。先服务商品种类少、可以现场拍摄的商户。",
     pain: "老板用手机随手拍，细节交代不清；套现成图片又容易与实物不符，顾客拿到后觉得被误导。",
     solution: "约定到店时间，拍正面、尺寸参照和关键细节，保存原片。允许裁切和校正曝光，不修掉商品瑕疵，最后交一套商品图和一条短视频。",
@@ -221,9 +215,8 @@ function renderCases(category) {
   document.querySelector("#caseGrid").innerHTML = filtered.map((item) => `
     <article class="case-card ${item.tone}">
       <div class="case-card-top"><span class="case-icon">${icon(item.icon)}</span><span class="case-category">${item.category}</span><span class="case-number">${item.number}</span></div>
-      <h3>${item.title}</h3><p class="case-subtitle">${item.subtitle}</p><p class="case-summary">${item.summary}</p>
+      <h3>${item.title}</h3><p class="case-summary">${item.summary}</p>
       <div class="case-tags">${item.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
-      <a class="case-source-link" href="${item.source.url}" target="_blank" rel="noopener noreferrer" aria-label="查看${item.title}的问题来源（新窗口打开）">${item.source.publisher} · ${item.source.date}<span aria-hidden="true">↗</span></a>
       <button class="case-detail-button" type="button" data-case-id="${item.id}" aria-label="查看${item.title}方案详情">查看方案详情 <span aria-hidden="true">↗</span></button>
     </article>`).join("");
 }
@@ -240,9 +233,9 @@ document.querySelector("#caseGrid").addEventListener("click", (event) => {
   if (!item) return;
   const fields = [["谁会用", item.user], ["卡在哪里", item.pain], ["具体怎么做", item.solution], ["换个做法", item.innovation], ["谁来付钱", item.business], ["先试一小步", item.pilot], ["要想清楚的事", item.validation]];
   document.querySelector("#caseDetailContent").innerHTML = `
-    <span class="detail-category ${item.tone}">${item.category} · 热点问题改编</span><h2 id="caseDetailTitle">${item.title}</h2><p class="detail-subtitle">${item.subtitle}</p>
+    <span class="detail-category ${item.tone}">${item.category} · 热点问题改编</span><h2 id="caseDetailTitle">${item.title}</h2>
     <div class="detail-highlight">${item.summary}</div>
-    <section class="case-background" aria-label="问题来源"><h3>问题从哪里来</h3><p>${item.background}</p><a href="${item.source.url}" target="_blank" rel="noopener noreferrer">${item.source.publisher} · ${item.source.date}<br />${item.source.title}<span aria-hidden="true"> ↗</span></a></section>
+    <section class="case-background" aria-label="问题背景"><h3>问题背景</h3><p>${item.background}</p></section>
     <dl class="detail-fields">${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
     <p class="detail-note">报道提供问题背景，以上做法是据此设计的教学方案，尚未开展经营验证。</p>`;
   caseDialog.showModal();
