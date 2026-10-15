@@ -228,8 +228,7 @@ document.querySelector("#caseGrid").addEventListener("click", (event) => {
   document.querySelector("#caseDetailContent").innerHTML = `
     <span class="detail-category ${item.tone}">${item.category}</span><h2 id="caseDetailTitle">${item.title}</h2>
     <div class="detail-highlight">${item.summary}</div>
-    <dl class="detail-fields">${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
-    <p class="detail-note">以上为教学方案，尚未开展经营验证。</p>`;
+    <dl class="detail-fields">${fields.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}</dl>`;
   caseDialog.showModal();
   caseDialog.scrollTop = 0;
 });
