@@ -200,7 +200,6 @@ document.querySelector("#loginForm").addEventListener("submit", async (event) =>
 
 function renderCases(category) {
   const filtered = category === "全部" ? cases : cases.filter((item) => item.category === category);
-  document.querySelector("#caseCount").textContent = `${filtered.length} 个方案示例`;
   document.querySelectorAll("[data-filter]").forEach((button) => {
     const active = button.dataset.filter === category;
     button.classList.toggle("active", active);
